@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Mac
+.DS_Store
+
+# Node
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log

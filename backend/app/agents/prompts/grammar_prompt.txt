@@ -1,0 +1,28 @@
+Review the article for:
+
+- grammar
+- spelling
+- punctuation
+
+Return ONLY valid JSON.
+Do not include markdown.
+Do not wrap the response in ```json.
+
+Use this exact structure:
+
+{{
+    "score": 0,
+    "issues": [
+        {{
+            "type": "grammar",
+            "text": "",
+            "issue": "",
+            "suggestion": ""
+        }}
+    ],
+    "summary": ""
+}}
+
+Article:
+
+{article}
