@@ -65,7 +65,7 @@ backend/
     api/               review.py (POST /review), health.py (GET /health)
     core/              config.py (pydantic-settings), logging.py
     llm/               base.py (LLMClient, Usage), ollama.py, anthropic.py, pricing.py, factory.py
-    agents/            base.py, grammar.py, style.py, prompts/
+    agents/            base.py, grammar.py, style.py, prompts/<agent>/system.txt + user.txt
     workflows/         state.py (ReviewState), review_graph.py
     models/            review.py (Issue, AgentResult, ReviewResponse)
   tests/             test_*.py, fakes.py (FakeLLM, test-only)
@@ -143,7 +143,10 @@ flowchart TD
 
 ## Agents
 
-- `BaseAgent` holds the shared work: load prompt, call the LLM, validate. Each agent declares only `prompt_file` and `output_schema`.
+- `BaseAgent` holds the shared work: load prompts, fill in the article, call `generate_structured`. Each agent declares only `name` (its prompt folder), and optionally `output_schema` and `tier` (default `fast`).
+- **Two prompt files per agent:** `prompts/<agent>/system.txt` is the job description (what to check, how to report, the score scale); `prompts/<agent>/user.txt` is the message with an `{article}` slot, the article wrapped in `<article>` tags. Instructions and article stay separate, so text in an article is not taken as an instruction. Prompts contain no JSON instructions: the LLM layer enforces the answer shape.
+- **Score scale:** 0 to 100, 100 means no problems. Stated in the system prompts and enforced by `AgentResult` (an out-of-range score counts as an invalid answer and is retried once).
+- `review(article)` returns `LLMResponse[AgentResult]`: the result and its `Usage`, which the graph collects.
 - Agents receive the `LLMClient` in their constructor (dependency injection) and never create clients themselves.
 
 ## API
@@ -169,7 +172,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
 | 3 | LLM interface and fake (`llm/base.py`, `tests/fakes.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
 | 4 | Real LLM clients (`llm/ollama.py`, `llm/anthropic.py`) | Ollama (default, free) and Anthropic clients; structured output via JSON outputs, Pydantic validation + one retry, timeout, SDK backoff on rate limits, token/latency/cost tracking; `pricing.py`, `factory.py`; settings switch to Ollama; ADRs 0005 and 0006; tests with stand-in SDKs | done |
-| 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |
+| 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; separate system and user prompt files per agent, without JSON instructions; score 0-100; `models/review.py`; new files next to the old ones until commit 7; tests with `FakeLLM` | done |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |
 | 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); API tests; manual frontend check | todo |
 | 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
