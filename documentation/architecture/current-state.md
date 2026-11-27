@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 3 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, and the fact-check data shapes exist, but nothing in the app uses them yet.
+Snapshot during Phase 1, after commit 4 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, the fact-check data shapes exist and claims can be extracted from a draft, but nothing in the app uses them yet.
 
 ## What it does
 
@@ -39,7 +39,8 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/llm/factory.py` | `build_llm_client(settings)` picks the client from `LLM_PROVIDER` |
 | `backend/app/agents/base.py` | Generic `BaseAgent[R]`: loads `prompts/<agent>/system.txt` and `user.txt`, checks the declared slots, fills them in one pass (`run(**values)`), calls `generate_structured` with the agent's `output_schema` and `tier`, returns result + usage. `ReviewAgent` adds `review(article)` with `AgentResult` |
 | `backend/app/agents/grammar.py`, `style.py` | `GrammarAgent`, `StyleAgent`: `ReviewAgent`s that name their prompt folder |
-| `backend/app/agents/prompts/` | `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
+| `backend/app/agents/claim_extractor.py` | `ClaimExtractor` (fast tier, slot `article`): `extract(draft)` returns `Claim`s numbered `c1`..., empty and repeated claims removed, at most `max_claims` (20). Not used by the app yet |
+| `backend/app/agents/prompts/` | `claim_extractor/` (rules for atomic, self-contained claims plus one worked example); `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
 | `backend/app/retrieval/corpus.py` | `Document` (doc id, title, numbered sentences), `Corpus` (count, iterate, lookup by id), `load_corpus(path)` for SciFact-format files; clear errors for a missing or broken file. Not used by the app yet |
 | `backend/app/retrieval/base.py` | `Passage` (document + score) and the async `Retriever` interface: `search(query, k)` |
 | `backend/app/retrieval/bm25.py` | `BM25Retriever` (`bm25s` + English stemming, stopwords dropped), title + abstract indexed in memory (about 0.35 s for 5,183 abstracts); returns up to k passages with score > 0. Not used by the app yet |

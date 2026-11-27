@@ -97,6 +97,7 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 - Each claim is **atomic** (one fact) and **self-contained** ("It reduced deaths" becomes "Statins reduced deaths in heart patients").
 - Each claim carries the **exact sentence of the draft it came from**, copied word for word, for highlighting.
 - Opinions, questions and filler are skipped. At most 20 claims per draft (a setting).
+- The model writes only `text` and `source_sentence`; the code drops empty and repeated claims (ignoring case and spacing), keeps the first `max_claims`, and numbers them `c1`, `c2`, .... The system prompt includes one worked example, which small local models follow better than rules alone.
 
 **Verifier** (strong tier). Gets one claim plus the top 3 abstracts with numbered sentences.
 
@@ -143,7 +144,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | 1 | Corpus | `scripts/download_scifact.py`, `make data`, `retrieval/corpus.py`, fixture corpus, tests | done |
 | 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | done |
 | 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | done |
-| 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | todo |
+| 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | done |
 | 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | todo |
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | todo |
 | 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | todo |
