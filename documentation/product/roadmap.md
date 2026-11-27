@@ -19,7 +19,8 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 ## Phase 0: Clean foundation
 
 - **Goal:** a codebase we can build on with confidence.
-- **Scope:** remove the duplicate LLM service; update model names; structured output via tool use with Pydantic models; retries, timeouts and token counting in the LLM layer; pytest unit tests with a fake LLM; ruff + GitHub Actions; README; ADRs.
+- **Scope:** layered backend structure; remove the duplicate LLM service; models from settings; structured output via tool use with Pydantic models; retries, timeouts and token/cost tracking in the LLM layer; existing agents as a minimal LangGraph graph (Grammar and Style in parallel); pytest unit tests with a fake LLM; ruff, pyright and GitHub Actions; README; ADRs.
+- **Design:** [phases/phase-0-foundation.md](../phases/phase-0-foundation.md)
 - **Out of scope:** any new feature.
 - **Done when:** CI is green on every push, and the existing grammar and style review still works.
 
@@ -51,7 +52,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 ## Phase 5: Editorial desk orchestration
 
 - **Goal:** turn the fact-checker into the full editorial desk.
-- **Scope:** LangGraph workflow with typed state; grammar, style-guide (RAG) and duplicate agents in parallel; editor-in-chief step; Postgres checkpointing; retries per step; human approval pause and resume.
+- **Scope:** extend the LangGraph graph (in place since Phase 0) with style-guide (RAG) and duplicate agents; editor-in-chief step; Postgres checkpointing; retries per step; human approval pause and resume; revise loop.
 - **Done when:** a run killed mid-review resumes after restart; nothing is approved without the editor.
 
 ## Phase 6: MCP server
@@ -91,6 +92,6 @@ Answered in the design discussion of the phase where they matter; each answer be
 | Verdict labels: three, or add "partly supported"? | Phase 1 |
 | LLM choice for extraction vs. verification, monthly API budget | Phase 0–1 |
 | Embeddings and reranker: hosted or local open model? | Phase 3 |
-| Orchestration: LangGraph or hand-written state machine? | Phase 5 |
+| ~~Orchestration: LangGraph or hand-written state machine?~~ LangGraph from Phase 0 ([ADR 0003](../decisions/0003-langgraph-from-phase-0.md)) | decided |
 | Public style guide for the demo | Phase 5 |
 | Weekly time budget and MVP target date | Phase 0 |

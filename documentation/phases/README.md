@@ -17,4 +17,4 @@ Each phase file contains:
 4. **Done when:** the checks that close the phase.
 5. **Outcome** (filled in at the end): what was built, the numbers, what changed from the plan.
 
-No phase designs are agreed yet.
+Agreed so far: [Phase 0](phase-0-foundation.md).

@@ -38,7 +38,7 @@ flowchart TD
 
 ## Planned stack
 
-Each tool is added only in the phase that needs it. To be confirmed as an ADR before Phase 0 work starts.
+Each tool is added only in the phase that needs it. Recorded in [ADR 0002](../decisions/0002-tech-stack.md).
 
 | Layer | Choice | Phase |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ Each tool is added only in the phase that needs it. To be confirmed as an ADR be
 | Evals and tracing | Own runner on pytest + Langfuse | 2 |
 | Vector store | Qdrant | 3 |
 | Embeddings and reranker | Local open models via sentence-transformers | 3 |
-| Orchestration | LangGraph + Postgres checkpointer | 5 |
+| Orchestration | LangGraph (graph from Phase 0, Postgres checkpointer from Phase 5) | 0, 5 |
 | Database | Postgres (SQLAlchemy 2 + Alembic) | 5 |
 | MCP | Hand-written JSON-RPC server | 6 |
 | Queue | Redis + arq | 7 |

@@ -26,12 +26,14 @@ Start here. Every documentation file is listed below with what it answers. Files
 | ADR | Title | Status |
 | --- | --- | --- |
 | [0001](decisions/0001-fact-checking-as-core.md) | Fact-checking is the core of EditoralFlow | accepted |
+| [0002](decisions/0002-tech-stack.md) | Tech stack | accepted |
+| [0003](decisions/0003-langgraph-from-phase-0.md) | LangGraph from Phase 0 | accepted |
 
 ### Phases
 
 | Phase | Design | Status |
 | --- | --- | --- |
-| 0 Clean foundation | not written yet | in design |
+| 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | agreed, not started |
 
 ## Status values
 
