@@ -1,7 +1,7 @@
 ---
 title: Phase 0 design - Clean foundation
 summary: Restructure the backend into layers, make LLM calls structured and tracked, run the existing agents as a minimal LangGraph graph, and add tests and CI. No new features.
-status: built, awaiting first CI run and merge
+status: done
 updated: 2026-11-27
 ---
 
@@ -197,7 +197,7 @@ Update the Status column as each commit lands.
 
 ## Done when
 
-- [ ] CI is green on every push (ruff, pyright, pytest). *`make check` passes locally; the GitHub run happens on the first push of `phase-0`.*
+- [x] CI is green on every push (ruff, pyright, pytest). First GitHub Actions run on `phase-0` passed on 2026-11-27.
 - [x] The frontend review works as before (same request and response shape; scores now use a defined 0-100 scale). Checked by hand by the owner.
 - [x] Grammar and Style run as parallel nodes in a LangGraph graph (a test proves they run at the same time).
 - [x] Every LLM call logs model, tokens, latency and estimated cost.
@@ -206,7 +206,7 @@ Update the Status column as each commit lands.
 
 ## Outcome
 
-Built on branch `phase-0` in the nine planned commits, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
+Done on 2026-11-27. Built on branch `phase-0` in the nine planned commits, merged into `redesign` by pull request,, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
 
 ### What changed from the plan
 
@@ -228,7 +228,6 @@ Built on branch `phase-0` in the nine planned commits, plus two small ones (movi
 
 ### Left open
 
-- First green CI run on GitHub (after the push) and the pull request into `redesign`.
 - Partial results when one agent fails (needs a frontend change).
 - Frontend lint and tests in CI.
 
