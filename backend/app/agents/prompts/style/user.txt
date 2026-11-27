@@ -1,0 +1,5 @@
+Review the style and editorial quality of this article:
+
+<article>
+{article}
+</article>

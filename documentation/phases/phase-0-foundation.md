@@ -1,7 +1,7 @@
 ---
 title: Phase 0 design - Clean foundation
 summary: Restructure the backend into layers, make LLM calls structured and tracked, run the existing agents as a minimal LangGraph graph, and add tests and CI. No new features.
-status: agreed
+status: done
 updated: 2026-11-27
 ---
 
@@ -34,15 +34,15 @@ flowchart TD
         end
         agents --> llm
         subgraph llm[llm/: the only code that talks to a model]
-            anth[AnthropicClient<br/>tool use, retries, timeout, usage log]
-            oai[OpenAIClient<br/>optional]
-            fake[FakeLLM<br/>used by tests]
+            oll[OllamaClient<br/>local, free: default]
+            anth[AnthropicClient<br/>Claude API, paid]
         end
         core[core/<br/>settings, logging]
         models[models/<br/>Pydantic schemas]
     end
+    oll --> ollama[Ollama on this machine]
     anth --> claude[Claude API]
-    tests[tests/<br/>pytest + FakeLLM] --> ci[GitHub Actions CI]
+    tests[tests/<br/>pytest + FakeLLM in fakes.py] --> ci[GitHub Actions CI]
 ```
 
 | Folder | Its one job | Belongs here if it... |
@@ -64,11 +64,11 @@ backend/
     main.py            app factory: builds settings, LLM client, graph on startup
     api/               review.py (POST /review), health.py (GET /health)
     core/              config.py (pydantic-settings), logging.py
-    llm/               base.py (LLMClient interface, Usage), anthropic.py, openai.py, fake.py
-    agents/            base.py, grammar.py, style.py, prompts/
-    workflows/         state.py (ReviewState), review_graph.py
+    llm/               base.py (LLMClient, Usage), ollama.py, anthropic.py, pricing.py, factory.py
+    agents/            base.py, grammar.py, style.py, prompts/<agent>/system.txt + user.txt
+    workflows/         state.py (ReviewInput, ReviewState, ReviewUpdate), review_graph.py
     models/            review.py (Issue, AgentResult, ReviewResponse)
-  tests/
+  tests/             test_*.py, fakes.py (FakeLLM, test-only)
   pyproject.toml       dependencies and tool config via uv
 .github/workflows/ci.yml
 ```
@@ -87,7 +87,10 @@ flowchart LR
     merge --> done([END: same JSON as today])
 ```
 
-- **State (`ReviewState`):** a typed dict carrying `article`, `grammar_result`, `style_result`, and a `usage` list that each node appends its LLM usage to (a LangGraph reducer, so parallel nodes don't overwrite each other).
+- **State (`ReviewState`):** a typed dict carrying `article`, `grammar_result`, `style_result`, `response`, and a `usage` list that each node appends its LLM usage to (a LangGraph reducer, so parallel nodes don't overwrite each other). `ReviewInput` (just `article`) is what a review starts with; `ReviewUpdate` is the partial dict a node returns.
+- **Prepare draft** trims the article and unifies line endings. **Merge results** builds `ReviewResponse` and logs one line per review with calls, tokens, LLM time and cost.
+- **Errors:** if an agent fails, the whole review fails with that `LLMError` (same as before). Partial results (one agent's answer when the other failed) are left for a later phase, because the frontend would need to change.
+- `build_review_graph(llm)` compiles the graph; `run_review(graph, article)` returns the response and all usage records.
 - **Nodes** are thin wrappers: each calls one agent and returns only the state keys it changes.
 - **The graph is compiled once at startup** and handed to the API route.
 - No checkpointer, human pause or loops yet. Those arrive in later phases.
@@ -130,46 +133,101 @@ flowchart TD
 
 ## LLM layer
 
-- **Interface `LLMClient`:** `generate(prompt, system=None) -> LLMResponse[str]` and `generate_structured(prompt, schema, system=None) -> LLMResponse[schema]`.
-- **Structured output via tool use:** the Pydantic schema becomes a tool definition and Claude is required to call it. The arguments are validated with Pydantic; one retry on validation failure.
-- **Reliability:** timeout, retries with exponential backoff on rate-limit and server errors.
-- **Usage record** per call: model, input/output tokens, latency, estimated cost. Logged and returned, so the Phase 7 cost dashboard has data from day one.
+- **Interface `LLMClient`:** async `generate(prompt, system=None, tier="fast") -> LLMResponse[str]` and `generate_structured(prompt, schema, system=None, tier="fast") -> LLMResponse[schema]` ([ADR 0004](../decisions/0004-async-llm-calls.md)).
+- **Model tiers:** agents ask for `"fast"` or `"strong"`; the client maps the tier to a model name from settings, so agents never name a model or provider.
+- **Errors:** `LLMError` for failed calls, `LLMOutputError` when the answer does not fit the schema.
+- **Providers** ([ADR 0006](../decisions/0006-local-models-with-ollama.md)): `OllamaClient` (local, free, default) and `AnthropicClient` (Claude, paid), chosen by `LLM_PROVIDER`. No OpenAI client in Phase 0.
+- **Structured output via JSON outputs** ([ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md)): the Pydantic schema is sent as the answer format (`output_config.format` for Claude, `format` for Ollama). The answer is validated with Pydantic; one retry on validation failure. Refusals and cut-off answers raise their own errors.
+- **Reliability:** timeout; for Claude, the SDK's retries with exponential backoff on rate-limit, server and network errors (`LLM_MAX_RETRIES`). A local Ollama server has no rate limits, so no backoff; a stopped server or missing model gives a clear error.
+- **Usage record** per call: model, input/output tokens, latency, estimated cost (`pricing.py`; local models cost 0). Tokens of a retried attempt are included. Logged and returned, so the Phase 7 cost dashboard has data from day one.
 - **Models from settings:** no hard-coded model names.
-- **`FakeLLM`:** returns canned responses for tests.
+- **`FakeLLM`:** returns canned responses for tests. Lives in `tests/fakes.py`, not `app/`, because only tests use it.
 - The duplicate `services/llm/llm_service.py` is deleted.
 
 ## Agents
 
-- `BaseAgent` holds the shared work: load prompt, call the LLM, validate. Each agent declares only `prompt_file` and `output_schema`.
+- `BaseAgent` holds the shared work: load prompts, fill in the article, call `generate_structured`. Each agent declares only `name` (its prompt folder), and optionally `output_schema` and `tier` (default `fast`).
+- **Two prompt files per agent:** `prompts/<agent>/system.txt` is the job description (what to check, how to report, the score scale); `prompts/<agent>/user.txt` is the message with an `{article}` slot, the article wrapped in `<article>` tags. Instructions and article stay separate, so text in an article is not taken as an instruction. Prompts contain no JSON instructions: the LLM layer enforces the answer shape.
+- **Score scale:** 0 to 100, 100 means no problems. Stated in the system prompts and enforced by `AgentResult` (an out-of-range score counts as an invalid answer and is retried once).
+- `review(article)` returns `LLMResponse[AgentResult]`: the result and its `Usage`, which the graph collects.
 - Agents receive the `LLMClient` in their constructor (dependency injection) and never create clients themselves.
 
 ## API
 
 - Settings load once via `pydantic-settings`; the LLM client and graph are created at startup, so a missing key fails with a clear message instead of an import-time crash.
+- The app is built by a factory, `create_app(settings=None, llm=None)`, started with `uvicorn --factory app.main:create_app`; tests pass their own settings and a `FakeLLM`.
+- Errors: a blank article returns 422; `LLMError` (model unreachable, timeout) returns 503; `LLMOutputError` (invalid answer after a retry) returns 502. The `detail` says what went wrong.
+- `make dev` runs the backend without Docker. In Docker, `OLLAMA_HOST` points at the Mac (`host.docker.internal`), because Ollama runs natively to use the GPU. The unused root `docker-compose.yml` is removed; `backend/docker-compose.yml` is the only one.
 - `POST /review` keeps the current response shape (`grammar_result`, `style_result`), so the frontend does not change.
-- `GET /health` added.
+- `GET /health` added: `{"status": "ok", "provider": ...}`.
 
 ## Quality and tooling
 
 - **uv** + `pyproject.toml` replace `requirements.txt`.
 - **ruff** (lint and format), **pyright** (types), **pytest**.
-- **Tests:** prompt loading; agent parsing with `FakeLLM`; LLM client retry and validation logic with a mocked SDK; the graph end to end with `FakeLLM`; the API via FastAPI's test client. A real-API test runs only when `ANTHROPIC_API_KEY` is set.
-- **GitHub Actions:** lint, type check and tests on every push and pull request.
+- **Tests:** prompt loading; agent parsing with `FakeLLM`; LLM client retry and validation logic with a mocked SDK; the graph end to end with `FakeLLM`; the API via FastAPI's test client. **Live tests** (`tests/test_live.py`, marker `live`) call the real model from settings (Ollama by default, free); they are skipped by `make check` and CI and run on purpose with `make test-live`, so nothing can spend money by accident.
+- **GitHub Actions** (`.github/workflows/ci.yml`): on every push and pull request, install with `uv sync --frozen` on Python 3.12, then ruff check, ruff format --check, pyright and pytest (fake LLM only). Frontend lint is not in CI yet; it belongs to a phase that changes the frontend.
+- **pre-commit** (`.pre-commit-config.yaml`): ruff check (with fixes) and ruff format on changed backend files at `git commit`; turn on with `make hooks`, skip once with `git commit --no-verify`.
+
+## Commit plan
+
+Work happens on branch `phase-0`, merged into `redesign` by pull request. Every commit leaves the app working. Follow the implementation workflow in `AGENTS.md`: explain before each commit, explain module by module after it, then stop for review.
+
+| # | Commit | Contents | Status |
+| --- | --- | --- | --- |
+| 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
+| 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
+| 3 | LLM interface and fake (`llm/base.py`, `tests/fakes.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
+| 4 | Real LLM clients (`llm/ollama.py`, `llm/anthropic.py`) | Ollama (default, free) and Anthropic clients; structured output via JSON outputs, Pydantic validation + one retry, timeout, SDK backoff on rate limits, token/latency/cost tracking; `pricing.py`, `factory.py`; settings switch to Ollama; ADRs 0005 and 0006; tests with stand-in SDKs | done |
+| 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; separate system and user prompt files per agent, without JSON instructions; score 0-100; `models/review.py`; new files next to the old ones until commit 7; tests with `FakeLLM` | done |
+| 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; `langgraph` dependency; `FakeLLM` responder for parallel tests; tests running the graph with `FakeLLM`, including a proof that the agents run at the same time | done |
+| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); remove root `docker-compose.yml`, `python-dotenv`; `make dev`; quiet `httpx` logs; API tests; manual check against real Ollama (local and Docker) | done |
+| 8 | CI | GitHub Actions: ruff (lint + format), pyright, pytest on push and PR; pre-commit config and `make hooks`; live tests against the configured model, run only with `make test-live` | done |
+| 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | done |
+
+Update the Status column as each commit lands.
 
 ## Decisions
 
 - [ADR 0002](../decisions/0002-tech-stack.md): tech stack.
 - [ADR 0003](../decisions/0003-langgraph-from-phase-0.md): LangGraph from Phase 0.
+- [ADR 0004](../decisions/0004-async-llm-calls.md): async LLM calls.
+- [ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md): JSON outputs for structured answers.
+- [ADR 0006](../decisions/0006-local-models-with-ollama.md): local models with Ollama for development.
 
 ## Done when
 
-- [ ] CI is green on every push (ruff, pyright, pytest).
-- [ ] The frontend review works exactly as before.
-- [ ] Grammar and Style run as parallel nodes in a LangGraph graph.
-- [ ] Every LLM call logs model, tokens, latency and estimated cost.
-- [ ] README explains how to run, test and read the code.
-- [ ] `architecture/current-state.md` and `MAP.md` reflect the new structure.
+- [x] CI is green on every push (ruff, pyright, pytest). First GitHub Actions run on `phase-0` passed on 2026-11-27.
+- [x] The frontend review works as before (same request and response shape; scores now use a defined 0-100 scale). Checked by hand by the owner.
+- [x] Grammar and Style run as parallel nodes in a LangGraph graph (a test proves they run at the same time).
+- [x] Every LLM call logs model, tokens, latency and estimated cost.
+- [x] README explains how to run, test and read the code.
+- [x] `architecture/current-state.md` and `MAP.md` reflect the new structure.
 
 ## Outcome
 
-To be filled in when the phase is complete.
+Done on 2026-11-27. Built on branch `phase-0` in the nine planned commits, merged into `redesign` by pull request,, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
+
+### What changed from the plan
+
+| Planned | Built | Why |
+| --- | --- | --- |
+| Structured output via forced tool use | JSON outputs (`output_config.format`; Ollama `format`) | Claude Sonnet 5.5 rejects forced tool use ([ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md)) |
+| Anthropic client + optional OpenAI client | Ollama client (default, free) + Anthropic client; no OpenAI | Development runs cost nothing on a local model ([ADR 0006](../decisions/0006-local-models-with-ollama.md)) |
+| Sync LLM calls (implicit) | Async throughout | Phase 1 makes many calls at once ([ADR 0004](../decisions/0004-async-llm-calls.md)) |
+| One prompt file per agent | `system.txt` (job description) + `user.txt` (article slot) | Instructions and article stay separate |
+| Score scale not defined | 0 to 100, enforced by the schema | The frontend averages the scores |
+| Real-API test when a key is set | `make test-live` against the configured model | Free with Ollama; never runs by accident |
+| Two Docker Compose files | One, `backend/docker-compose.yml` | The root one was unused |
+
+### What we learned
+
+- The local `qwen3:8b` model follows the agents' instructions only partly: it sometimes merges two problems into one issue, files a style issue under grammar, or invents a problem. Measuring and improving this is Phase 2's job; Claude or `OLLAMA_THINK=true` are one-line alternatives.
+- The style check judges against general good writing, not a house style guide. It is a placeholder until the Phase 5 style-guide agent, which retrieves the publication's own rules and cites them.
+- Ollama serves one request at a time by default, so the two parallel agents queue there.
+
+### Left open
+
+- Partial results when one agent fails (needs a frontend change).
+- Frontend lint and tests in CI.
+

@@ -1,0 +1,5 @@
+Check the grammar, spelling and punctuation of this article:
+
+<article>
+{article}
+</article>

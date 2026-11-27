@@ -44,7 +44,7 @@ Each tool is added only in the phase that needs it. Recorded in [ADR 0002](../de
 | --- | --- | --- |
 | API | Python 3.12, FastAPI, Pydantic v2 | existing |
 | Tooling | uv, ruff, pyright, pytest, pre-commit, GitHub Actions | 0 |
-| LLM | Anthropic SDK behind an internal interface (OpenAI optional); small model for extraction/grammar, strong model for verification | 0–1 |
+| LLM | Internal `LLMClient` interface; Ollama local models by default for development, Claude (Anthropic SDK) by setting ([ADR 0006](../decisions/0006-local-models-with-ollama.md)); fast tier for extraction/grammar, strong tier for verification | 0–1 |
 | Keyword search | bm25s | 1 |
 | Datasets | Hugging Face `datasets` (SciFact, later FEVER) | 1 |
 | Evals and tracing | Own runner on pytest + Langfuse | 2 |

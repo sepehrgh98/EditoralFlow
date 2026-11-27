@@ -1,0 +1,53 @@
+[project]
+name = "editoralflow-backend"
+version = "0.1.0"
+description = "EditoralFlow backend: an AI editorial desk with grounded fact-checking"
+readme = "../README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.105",
+    "fastapi>=0.136",
+    "httpx>=0.28",
+    "langgraph>=1.0",
+    "ollama>=0.6",
+    "pydantic>=2.13",
+    "pydantic-settings>=2.10",
+    "uvicorn>=0.48",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.0",
+    "pyright>=1.1.400",
+    "pytest>=8.3",
+    "pytest-asyncio>=1.0",
+    "ruff>=0.12",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F: pycodestyle + pyflakes, I: import order, B: bugbear, UP: modern syntax, SIM: simplifications
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.pyright]
+include = ["app", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Run `async def test_...` functions without a marker on each one
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# Live tests call a real model; they are skipped unless asked for (make test-live)
+markers = ["live: calls the real LLM from settings (run with: make test-live)"]
+addopts = "-m 'not live'"
