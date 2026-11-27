@@ -29,6 +29,8 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [0002](decisions/0002-tech-stack.md) | Tech stack | accepted |
 | [0003](decisions/0003-langgraph-from-phase-0.md) | LangGraph from Phase 0 | accepted |
 | [0004](decisions/0004-async-llm-calls.md) | Async LLM calls | accepted |
+| [0005](decisions/0005-json-outputs-for-structured-answers.md) | JSON outputs for structured answers | accepted |
+| [0006](decisions/0006-local-models-with-ollama.md) | Local models with Ollama for development | accepted |
 
 ### Phases
 

@@ -9,6 +9,7 @@ updated: 2026-11-27
 
 - **Status:** Accepted
 - **Date:** 2026-11-27
+- **Amended by:** [ADR 0006](0006-local-models-with-ollama.md) (LLM row: Ollama as default provider, OpenAI dropped from Phase 0)
 
 ## Context
 

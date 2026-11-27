@@ -10,7 +10,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # backend/.env, independent of the directory the app is started from
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
-Provider = Literal["anthropic", "openai"]
+# ollama: free, local models (default for development). anthropic: Claude API (paid).
+Provider = Literal["ollama", "anthropic"]
 
 
 class Settings(BaseSettings):
@@ -23,21 +24,25 @@ class Settings(BaseSettings):
     )
 
     # Which LLM provider the app uses
-    llm_provider: Provider = "anthropic"
+    llm_provider: Provider = "ollama"
 
-    # API keys (SecretStr hides the value in logs and reprs)
+    # Ollama (local). No API key needed.
+    ollama_host: str = "http://localhost:11434"
+    ollama_fast_model: str = "qwen3:8b"
+    ollama_strong_model: str = "qwen3:14b"
+    ollama_num_ctx: int = Field(default=16384, gt=0)  # context window; Ollama's default is small
+    ollama_think: bool = False  # let thinking models reason first (slower, sometimes better)
+
+    # Anthropic (Claude API). SecretStr hides the key in logs and reprs.
     anthropic_api_key: SecretStr | None = None
-    openai_api_key: SecretStr | None = None
-
-    # Model names: a cheap, fast model and a stronger one for harder tasks
     anthropic_fast_model: str = "claude-haiku-5-5"
     anthropic_strong_model: str = "claude-sonnet-5-5"
-    openai_model: str = "gpt-4.1-mini"
 
     # LLM call reliability
-    llm_timeout_seconds: float = Field(default=60.0, gt=0)
+    llm_timeout_seconds: float = Field(default=120.0, gt=0)
     llm_max_retries: int = Field(default=3, ge=0)
-    llm_max_tokens: int = Field(default=2000, gt=0)
+    # Models think before answering and that counts toward this limit, so keep it generous
+    llm_max_tokens: int = Field(default=16000, gt=0)
 
     # App
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
@@ -45,11 +50,11 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _require_provider_key(self) -> "Settings":
-        key_name = f"{self.llm_provider}_api_key"
-        if getattr(self, key_name) is None:
+        if self.llm_provider == "anthropic" and self.anthropic_api_key is None:
             raise ValueError(
-                f"LLM_PROVIDER is '{self.llm_provider}' but {key_name.upper()} is not set. "
-                "Add it to backend/.env (see backend/.env.example) or the environment."
+                "LLM_PROVIDER is 'anthropic' but ANTHROPIC_API_KEY is not set. "
+                "Add it to backend/.env (see backend/.env.example) or the environment, "
+                "or use LLM_PROVIDER=ollama for free local models."
             )
         return self
 

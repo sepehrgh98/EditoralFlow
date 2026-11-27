@@ -8,11 +8,14 @@ from app.core.logging import setup_logging
 
 ENV_VARS = [
     "LLM_PROVIDER",
+    "OLLAMA_HOST",
+    "OLLAMA_FAST_MODEL",
+    "OLLAMA_STRONG_MODEL",
+    "OLLAMA_NUM_CTX",
+    "OLLAMA_THINK",
     "ANTHROPIC_API_KEY",
-    "OPENAI_API_KEY",
     "ANTHROPIC_FAST_MODEL",
     "ANTHROPIC_STRONG_MODEL",
-    "OPENAI_MODEL",
     "LLM_TIMEOUT_SECONDS",
     "LLM_MAX_RETRIES",
     "LLM_MAX_TOKENS",
@@ -33,30 +36,38 @@ def make_settings(**overrides: object) -> Settings:
     return Settings(_env_file=None, **overrides)  # type: ignore[call-arg]
 
 
-def test_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+def test_defaults_need_no_api_key() -> None:
     settings = make_settings()
 
-    assert settings.llm_provider == "anthropic"
+    assert settings.llm_provider == "ollama"
+    assert settings.ollama_host == "http://localhost:11434"
+    assert settings.ollama_fast_model == "qwen3:8b"
+    assert settings.ollama_strong_model == "qwen3:14b"
+    assert settings.ollama_num_ctx == 16384
+    assert settings.ollama_think is False
+    assert settings.anthropic_api_key is None
     assert settings.anthropic_fast_model == "claude-haiku-5-5"
     assert settings.anthropic_strong_model == "claude-sonnet-5-5"
-    assert settings.llm_timeout_seconds == 60.0
+    assert settings.llm_timeout_seconds == 120.0
     assert settings.llm_max_retries == 3
+    assert settings.llm_max_tokens == 16000
     assert settings.log_level == "INFO"
     assert settings.cors_origins == ["http://localhost:3000"]
 
 
 def test_reads_environment(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("LLM_PROVIDER", "openai")
-    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-    monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    monkeypatch.setenv("OLLAMA_FAST_MODEL", "llama3.1:8b")
+    monkeypatch.setenv("OLLAMA_THINK", "true")
     monkeypatch.setenv("LLM_TIMEOUT_SECONDS", "5")
     monkeypatch.setenv("CORS_ORIGINS", '["http://a", "http://b"]')
 
     settings = make_settings()
 
-    assert settings.llm_provider == "openai"
-    assert settings.openai_model == "gpt-test"
+    assert settings.llm_provider == "anthropic"
+    assert settings.ollama_fast_model == "llama3.1:8b"
+    assert settings.ollama_think is True
     assert settings.llm_timeout_seconds == 5.0
     assert settings.cors_origins == ["http://a", "http://b"]
 
@@ -72,17 +83,16 @@ def test_reads_env_file(tmp_path) -> None:
     assert settings.llm_max_tokens == 123
 
 
-@pytest.mark.parametrize("provider", ["anthropic", "openai"])
-def test_missing_provider_key_fails_clearly(provider: str) -> None:
-    with pytest.raises(ValidationError, match=f"{provider.upper()}_API_KEY is not set"):
-        make_settings(llm_provider=provider)
+def test_anthropic_without_key_fails_clearly() -> None:
+    with pytest.raises(ValidationError, match="ANTHROPIC_API_KEY is not set"):
+        make_settings(llm_provider="anthropic")
 
 
 def test_rejects_invalid_values() -> None:
     with pytest.raises(ValidationError):
-        make_settings(anthropic_api_key="k", llm_provider="gemini")
+        make_settings(llm_provider="openai")
     with pytest.raises(ValidationError):
-        make_settings(anthropic_api_key="k", llm_timeout_seconds=0)
+        make_settings(llm_timeout_seconds=0)
 
 
 def test_api_key_is_hidden() -> None:
@@ -93,7 +103,6 @@ def test_api_key_is_hidden() -> None:
 
 
 def test_get_settings_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     monkeypatch.setitem(Settings.model_config, "env_file", None)  # ignore backend/.env
     get_settings.cache_clear()
     try:

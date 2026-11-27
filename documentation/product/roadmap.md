@@ -19,7 +19,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 ## Phase 0: Clean foundation
 
 - **Goal:** a codebase we can build on with confidence.
-- **Scope:** layered backend structure; remove the duplicate LLM service; models from settings; structured output via tool use with Pydantic models; retries, timeouts and token/cost tracking in the LLM layer; existing agents as a minimal LangGraph graph (Grammar and Style in parallel); pytest unit tests with a fake LLM; ruff, pyright and GitHub Actions; README; ADRs.
+- **Scope:** layered backend structure; remove the duplicate LLM service; models from settings; structured output (JSON outputs) validated with Pydantic models; local models via Ollama by default, Claude by setting; retries, timeouts and token/cost tracking in the LLM layer; existing agents as a minimal LangGraph graph (Grammar and Style in parallel); pytest unit tests with a fake LLM; ruff, pyright and GitHub Actions; README; ADRs.
 - **Design:** [phases/phase-0-foundation.md](../phases/phase-0-foundation.md)
 - **Out of scope:** any new feature.
 - **Done when:** CI is green on every push, and the existing grammar and style review still works.

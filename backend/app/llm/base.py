@@ -4,6 +4,7 @@ Agents depend only on `LLMClient`, never on a provider SDK. That makes the provi
 settings choice and lets tests swap in `FakeLLM`.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Literal
 
@@ -25,6 +26,19 @@ class Usage(BaseModel):
     @property
     def total_tokens(self) -> int:
         return self.input_tokens + self.output_tokens
+
+
+def log_usage(logger: logging.Logger, usage: Usage) -> None:
+    """Write one log line per LLM call, so every call's cost is visible."""
+    cost = "unknown" if usage.cost_usd is None else f"${usage.cost_usd:.6f}"
+    logger.info(
+        "llm call model=%s in=%d out=%d latency=%.0fms cost=%s",
+        usage.model,
+        usage.input_tokens,
+        usage.output_tokens,
+        usage.latency_ms,
+        cost,
+    )
 
 
 class LLMResponse[T](BaseModel):

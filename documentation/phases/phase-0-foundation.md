@@ -34,12 +34,13 @@ flowchart TD
         end
         agents --> llm
         subgraph llm[llm/: the only code that talks to a model]
-            anth[AnthropicClient<br/>tool use, retries, timeout, usage log]
-            oai[OpenAIClient<br/>optional]
+            oll[OllamaClient<br/>local, free: default]
+            anth[AnthropicClient<br/>Claude API, paid]
         end
         core[core/<br/>settings, logging]
         models[models/<br/>Pydantic schemas]
     end
+    oll --> ollama[Ollama on this machine]
     anth --> claude[Claude API]
     tests[tests/<br/>pytest + FakeLLM in fakes.py] --> ci[GitHub Actions CI]
 ```
@@ -63,7 +64,7 @@ backend/
     main.py            app factory: builds settings, LLM client, graph on startup
     api/               review.py (POST /review), health.py (GET /health)
     core/              config.py (pydantic-settings), logging.py
-    llm/               base.py (LLMClient interface, Usage), anthropic.py, openai.py
+    llm/               base.py (LLMClient, Usage), ollama.py, anthropic.py, pricing.py, factory.py
     agents/            base.py, grammar.py, style.py, prompts/
     workflows/         state.py (ReviewState), review_graph.py
     models/            review.py (Issue, AgentResult, ReviewResponse)
@@ -132,9 +133,10 @@ flowchart TD
 - **Interface `LLMClient`:** async `generate(prompt, system=None, tier="fast") -> LLMResponse[str]` and `generate_structured(prompt, schema, system=None, tier="fast") -> LLMResponse[schema]` ([ADR 0004](../decisions/0004-async-llm-calls.md)).
 - **Model tiers:** agents ask for `"fast"` or `"strong"`; the client maps the tier to a model name from settings, so agents never name a model or provider.
 - **Errors:** `LLMError` for failed calls, `LLMOutputError` when the answer does not fit the schema.
-- **Structured output via tool use:** the Pydantic schema becomes a tool definition and Claude is required to call it. The arguments are validated with Pydantic; one retry on validation failure.
-- **Reliability:** timeout, retries with exponential backoff on rate-limit and server errors.
-- **Usage record** per call: model, input/output tokens, latency, estimated cost. Logged and returned, so the Phase 7 cost dashboard has data from day one.
+- **Providers** ([ADR 0006](../decisions/0006-local-models-with-ollama.md)): `OllamaClient` (local, free, default) and `AnthropicClient` (Claude, paid), chosen by `LLM_PROVIDER`. No OpenAI client in Phase 0.
+- **Structured output via JSON outputs** ([ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md)): the Pydantic schema is sent as the answer format (`output_config.format` for Claude, `format` for Ollama). The answer is validated with Pydantic; one retry on validation failure. Refusals and cut-off answers raise their own errors.
+- **Reliability:** timeout; for Claude, the SDK's retries with exponential backoff on rate-limit, server and network errors (`LLM_MAX_RETRIES`). A local Ollama server has no rate limits, so no backoff; a stopped server or missing model gives a clear error.
+- **Usage record** per call: model, input/output tokens, latency, estimated cost (`pricing.py`; local models cost 0). Tokens of a retried attempt are included. Logged and returned, so the Phase 7 cost dashboard has data from day one.
 - **Models from settings:** no hard-coded model names.
 - **`FakeLLM`:** returns canned responses for tests. Lives in `tests/fakes.py`, not `app/`, because only tests use it.
 - The duplicate `services/llm/llm_service.py` is deleted.
@@ -166,10 +168,10 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
 | 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
 | 3 | LLM interface and fake (`llm/base.py`, `tests/fakes.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
-| 4 | Real LLM clients (`llm/anthropic.py`, `llm/openai.py`) | Structured output via tool use, Pydantic validation + one retry, timeout, backoff on rate limits, token/latency/cost tracking; tests with a mocked SDK | todo |
+| 4 | Real LLM clients (`llm/ollama.py`, `llm/anthropic.py`) | Ollama (default, free) and Anthropic clients; structured output via JSON outputs, Pydantic validation + one retry, timeout, SDK backoff on rate limits, token/latency/cost tracking; `pricing.py`, `factory.py`; settings switch to Ollama; ADRs 0005 and 0006; tests with stand-in SDKs | done |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |
-| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow; API tests; manual frontend check | todo |
+| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); API tests; manual frontend check | todo |
 | 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
 | 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
 
@@ -180,6 +182,8 @@ Update the Status column as each commit lands.
 - [ADR 0002](../decisions/0002-tech-stack.md): tech stack.
 - [ADR 0003](../decisions/0003-langgraph-from-phase-0.md): LangGraph from Phase 0.
 - [ADR 0004](../decisions/0004-async-llm-calls.md): async LLM calls.
+- [ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md): JSON outputs for structured answers.
+- [ADR 0006](../decisions/0006-local-models-with-ollama.md): local models with Ollama for development.
 
 ## Done when
 

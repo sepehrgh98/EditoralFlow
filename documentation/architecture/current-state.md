@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot of the codebase during Phase 0 (commit 3 of 9). New `core/` and `llm/` code exists but the request flow below still uses the old code. Replace this file's content whenever the structure changes.
+Snapshot of the codebase during Phase 0 (commit 4 of 9). New `core/` and `llm/` code exists but the request flow below still uses the old code. Replace this file's content whenever the structure changes.
 
 ## What it does
 
@@ -34,11 +34,15 @@ Paste an article in the frontend; a grammar agent and a style agent each return 
 | `backend/app/services/llm/` | `BaseLLMService`, Anthropic and OpenAI services, factory; `llm_service.py` is a duplicate |
 | `backend/app/models/agent_result.py` | `Issue`, `AgentResult` |
 | `backend/app/utils/prompt_loader.py` | Reads prompt files |
-| `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider, API keys, model names, LLM timeout/retries/max tokens, log level, CORS. Fails clearly if the provider's key is missing. Not wired into the app yet (commit 7) |
+| `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider (`ollama` default, or `anthropic`), Ollama host/models/context/thinking, Anthropic key and models, LLM timeout/retries/max tokens, log level, CORS. Fails clearly if Anthropic is chosen without a key. Not wired into the app yet (commit 7) |
 | `backend/app/core/logging.py` | `setup_logging(level)`: one log format for the app. Not wired in yet |
-| `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, model tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`. Not used by the app yet |
+| `backend/app/llm/ollama.py` | `OllamaClient`: local models via Ollama (default provider, free); JSON-schema `format`, one retry on invalid answer, clear errors when Ollama is down or a model is missing |
+| `backend/app/llm/anthropic.py` | `AnthropicClient`: Claude via JSON outputs; SDK retries/backoff and timeout from settings; refusal and cut-off errors; one retry on invalid answer |
+| `backend/app/llm/pricing.py` | Price table and `estimate_cost()` |
+| `backend/app/llm/factory.py` | `build_llm_client(settings)` picks the client from `LLM_PROVIDER` |
+| `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, model tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()`. Not used by the app yet |
 | `backend/.env.example` | Every setting with placeholder values |
-| `backend/tests/` | pytest suite (`test_config.py`, `test_llm_fake.py`); `fakes.py` holds `FakeLLM` (canned answers in order, schema validation, call recording); async tests via pytest-asyncio |
+| `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory and pricing tests); `fakes.py` holds `FakeLLM` (canned answers in order, schema validation, call recording); async tests via pytest-asyncio |
 | `backend/pyproject.toml`, `uv.lock` | Dependencies and ruff/pyright/pytest config, managed by uv |
 | `backend/app/tests/test_anthropic.py` | Manual smoke script, not a real test |
 | `frontend/` | Next.js page showing scores and issues |
