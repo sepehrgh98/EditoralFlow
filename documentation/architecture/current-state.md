@@ -45,7 +45,7 @@ Paste an article in the frontend; a grammar agent and a style agent each return 
 | `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, model tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()`. Not used by the app yet |
 | `backend/.env.example` | Every setting with placeholder values |
 | `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory, pricing and agent tests); `fakes.py` holds `FakeLLM` (canned answers in order, schema validation, call recording); async tests via pytest-asyncio |
-| `backend/pyproject.toml`, `uv.lock` | Dependencies and ruff/pyright/pytest config, managed by uv |
+| `backend/pyproject.toml`, `uv.lock`, `.python-version` | Dependencies and ruff/pyright/pytest config, managed by uv; Python pinned to 3.12 to match the Docker image |
 | `backend/app/tests/test_anthropic.py` | Manual smoke script, not a real test |
 | `frontend/` | Next.js page showing scores and issues |
 | `Expert.docx` | Original 10-phase plan |
