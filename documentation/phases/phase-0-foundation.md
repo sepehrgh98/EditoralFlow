@@ -1,7 +1,7 @@
 ---
 title: Phase 0 design - Clean foundation
 summary: Restructure the backend into layers, make LLM calls structured and tracked, run the existing agents as a minimal LangGraph graph, and add tests and CI. No new features.
-status: agreed, in progress
+status: built, awaiting first CI run and merge
 updated: 2026-11-27
 ---
 
@@ -183,7 +183,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; `langgraph` dependency; `FakeLLM` responder for parallel tests; tests running the graph with `FakeLLM`, including a proof that the agents run at the same time | done |
 | 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); remove root `docker-compose.yml`, `python-dotenv`; `make dev`; quiet `httpx` logs; API tests; manual check against real Ollama (local and Docker) | done |
 | 8 | CI | GitHub Actions: ruff (lint + format), pyright, pytest on push and PR; pre-commit config and `make hooks`; live tests against the configured model, run only with `make test-live` | done |
-| 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
+| 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | done |
 
 Update the Status column as each commit lands.
 
@@ -197,13 +197,38 @@ Update the Status column as each commit lands.
 
 ## Done when
 
-- [ ] CI is green on every push (ruff, pyright, pytest).
-- [ ] The frontend review works exactly as before.
-- [ ] Grammar and Style run as parallel nodes in a LangGraph graph.
-- [ ] Every LLM call logs model, tokens, latency and estimated cost.
-- [ ] README explains how to run, test and read the code.
-- [ ] `architecture/current-state.md` and `MAP.md` reflect the new structure.
+- [ ] CI is green on every push (ruff, pyright, pytest). *`make check` passes locally; the GitHub run happens on the first push of `phase-0`.*
+- [x] The frontend review works as before (same request and response shape; scores now use a defined 0-100 scale). Checked by hand by the owner.
+- [x] Grammar and Style run as parallel nodes in a LangGraph graph (a test proves they run at the same time).
+- [x] Every LLM call logs model, tokens, latency and estimated cost.
+- [x] README explains how to run, test and read the code.
+- [x] `architecture/current-state.md` and `MAP.md` reflect the new structure.
 
 ## Outcome
 
-To be filled in when the phase is complete.
+Built on branch `phase-0` in the nine planned commits, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
+
+### What changed from the plan
+
+| Planned | Built | Why |
+| --- | --- | --- |
+| Structured output via forced tool use | JSON outputs (`output_config.format`; Ollama `format`) | Claude Sonnet 5.5 rejects forced tool use ([ADR 0005](../decisions/0005-json-outputs-for-structured-answers.md)) |
+| Anthropic client + optional OpenAI client | Ollama client (default, free) + Anthropic client; no OpenAI | Development runs cost nothing on a local model ([ADR 0006](../decisions/0006-local-models-with-ollama.md)) |
+| Sync LLM calls (implicit) | Async throughout | Phase 1 makes many calls at once ([ADR 0004](../decisions/0004-async-llm-calls.md)) |
+| One prompt file per agent | `system.txt` (job description) + `user.txt` (article slot) | Instructions and article stay separate |
+| Score scale not defined | 0 to 100, enforced by the schema | The frontend averages the scores |
+| Real-API test when a key is set | `make test-live` against the configured model | Free with Ollama; never runs by accident |
+| Two Docker Compose files | One, `backend/docker-compose.yml` | The root one was unused |
+
+### What we learned
+
+- The local `qwen3:8b` model follows the agents' instructions only partly: it sometimes merges two problems into one issue, files a style issue under grammar, or invents a problem. Measuring and improving this is Phase 2's job; Claude or `OLLAMA_THINK=true` are one-line alternatives.
+- The style check judges against general good writing, not a house style guide. It is a placeholder until the Phase 5 style-guide agent, which retrieves the publication's own rules and cites them.
+- Ollama serves one request at a time by default, so the two parallel agents queue there.
+
+### Left open
+
+- First green CI run on GitHub (after the push) and the pull request into `redesign`.
+- Partial results when one agent fails (needs a frontend change).
+- Frontend lint and tests in CI.
+

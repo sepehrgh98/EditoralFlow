@@ -23,6 +23,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 - **Design:** [phases/phase-0-foundation.md](../phases/phase-0-foundation.md)
 - **Out of scope:** any new feature.
 - **Done when:** CI is green on every push, and the existing grammar and style review still works.
+- **Status:** built on branch `phase-0`; awaiting the first CI run on GitHub and the merge. See the design file's Outcome.
 
 ## Phase 1: Fact-check MVP
 

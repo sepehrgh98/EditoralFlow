@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 0, after commit 8 of 9: the app runs on the new layered backend and CI checks every push. The README (commit 9) is still to come.
+Snapshot at the end of Phase 0: the app runs on the new layered backend, CI checks every push, and the [README](../../README.md) explains how to run, test and read the code.
 
 ## What it does
 
@@ -56,9 +56,9 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 
 ## Known weaknesses
 
-- README not written yet (commit 9).
 - Frontend has no tests or lint in CI.
 - The local 8B model sometimes reports an issue under the wrong agent (a style issue from the grammar agent) or merges two problems into one issue. Prompt tuning and measurement come with evaluations in Phase 2.
 - Ollama answers one request at a time unless `OLLAMA_NUM_PARALLEL` is raised, so the two agents' calls queue there.
+- The style check judges against general good writing, not a house style guide; the Phase 5 style-guide agent will retrieve the publication's rules and cite them.
 - If one agent fails, the whole review fails; partial results are left for a later phase.
 - The frontend shows a generic error message; the precise reason is in the backend logs and the response `detail`.
