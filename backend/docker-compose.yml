@@ -4,6 +4,10 @@ services:
       context: .
     env_file:
       - ./.env
+    environment:
+      # Ollama runs natively on the Mac (Docker on macOS cannot use the GPU);
+      # inside the container, localhost would be the container itself.
+      OLLAMA_HOST: http://host.docker.internal:11434
     ports:
       - "8000:8000"
     volumes:
