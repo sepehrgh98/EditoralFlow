@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 4 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, the fact-check data shapes exist and claims can be extracted from a draft, but nothing in the app uses them yet.
+Snapshot during Phase 1, after commit 5 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, claims can be extracted from a draft and verified against abstracts with cited source sentences, but nothing in the app uses this yet.
 
 ## What it does
 
@@ -40,7 +40,8 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/agents/base.py` | Generic `BaseAgent[R]`: loads `prompts/<agent>/system.txt` and `user.txt`, checks the declared slots, fills them in one pass (`run(**values)`), calls `generate_structured` with the agent's `output_schema` and `tier`, returns result + usage. `ReviewAgent` adds `review(article)` with `AgentResult` |
 | `backend/app/agents/grammar.py`, `style.py` | `GrammarAgent`, `StyleAgent`: `ReviewAgent`s that name their prompt folder |
 | `backend/app/agents/claim_extractor.py` | `ClaimExtractor` (fast tier, slot `article`): `extract(draft)` returns `Claim`s numbered `c1`..., empty and repeated claims removed, at most `max_claims` (20). Not used by the app yet |
-| `backend/app/agents/prompts/` | `claim_extractor/` (rules for atomic, self-contained claims plus one worked example); `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
+| `backend/app/agents/verifier.py` | `Verifier` (strong tier, slots `claim`, `passages`): numbers the abstracts' sentences 1..N, asks for `explanation`, `sentence_numbers`, `label`, builds citations from the corpus, downgrades unproven verdicts to `not_enough_info`; no model call when there are no passages. Not used by the app yet |
+| `backend/app/agents/prompts/` | `verifier/` (judge only from the given sentences; when unsure, can't tell); `claim_extractor/` (rules for atomic, self-contained claims plus one worked example); `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
 | `backend/app/retrieval/corpus.py` | `Document` (doc id, title, numbered sentences), `Corpus` (count, iterate, lookup by id), `load_corpus(path)` for SciFact-format files; clear errors for a missing or broken file. Not used by the app yet |
 | `backend/app/retrieval/base.py` | `Passage` (document + score) and the async `Retriever` interface: `search(query, k)` |
 | `backend/app/retrieval/bm25.py` | `BM25Retriever` (`bm25s` + English stemming, stopwords dropped), title + abstract indexed in memory (about 0.35 s for 5,183 abstracts); returns up to k passages with score > 0. Not used by the app yet |

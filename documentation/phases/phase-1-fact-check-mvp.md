@@ -104,6 +104,8 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 - Returns a label (`supported`, `contradicted`, `not_enough_info` shown as "can't tell"), a one-sentence explanation, and **the numbers of the sentences it relies on**, not free-text quotes.
 - The code looks those sentences up in the corpus to build each citation, so a quote can never be invented.
 - **Proof-or-abstain guard in code:** `supported` or `contradicted` with no valid sentence numbers is downgraded to `not_enough_info`; numbers that don't exist are dropped.
+- **How sources are shown:** abstracts are labelled Source A, B, C and all their sentences numbered 1..N in one sequence; the code keeps a map from each number to its abstract and sentence. The model's answer fields come in the order `explanation`, `sentence_numbers`, `label`, so it reasons before it decides. Repeated numbers are removed; `not_enough_info` never carries citations; a downgrade keeps the model's reason in the explanation.
+- **No passages, no call:** if search returns nothing, the verdict is `not_enough_info` ("No relevant source was found in the library.") without asking the model.
 
 **Answer shapes** (`models/fact_check.py`)
 
@@ -145,7 +147,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | done |
 | 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | done |
 | 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | done |
-| 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | todo |
+| 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | done |
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | todo |
 | 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | todo |
 | 8 | Frontend | Tabs, highlighted claims, evidence panel | todo |
