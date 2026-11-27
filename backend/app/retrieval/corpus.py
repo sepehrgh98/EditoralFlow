@@ -13,8 +13,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
-# backend/data/scifact/corpus.jsonl, written by `make data`
-DEFAULT_CORPUS_PATH = Path(__file__).resolve().parents[2] / "data" / "scifact" / "corpus.jsonl"
+from app.core.config import DEFAULT_CORPUS_PATH
 
 
 class Document(BaseModel):

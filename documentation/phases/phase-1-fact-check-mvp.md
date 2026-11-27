@@ -50,7 +50,7 @@ flowchart LR
 - `collect` gathers verdicts and usage records through reducers, like `usage` in the review graph, and sorts the results back into claim order (branches finish in any order).
 - `check_claim` is its own two-node graph (retrieve -> verify), so Phase 4 can insert its evidence loop between them. A claim branch hands back only `results` and `usage`.
 - A draft with no claims goes straight to `collect` (an empty result).
-- At most 4 claims are checked at the same time (`max_concurrency`; a setting in commit 7).
+- At most 4 claims are checked at the same time (`max_concurrency`; configurable through `FACT_CHECK_MAX_CONCURRENCY`).
 - If any claim's check fails, the whole fact-check fails with that error: marking it "can't tell" would wrongly mean "the sources don't settle it".
 - In the review graph, `fact_check` is a third parallel branch; its usage joins the review's. `ReviewResponse.fact_check_result` is left out of the JSON entirely when fact-checking is off, so `/review` is unchanged.
 
@@ -130,6 +130,7 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 
 - **`POST /fact-check`** takes `{"article": "..."}` and returns a `FactCheckResponse`. Same error handling as `/review` (502 bad model output, 503 model unreachable).
 - **`POST /review`** is unchanged by default; with `REVIEW_INCLUDE_FACT_CHECK=true` it also returns `fact_check_result`.
+- **Startup and readiness:** the server indexes the corpus at startup. If loading fails, grammar and style review remain available by default, `GET /health` reports `fact_check: unavailable`, and `POST /fact-check` returns 503 with the reason. With `REVIEW_INCLUDE_FACT_CHECK=true`, a corpus load failure stops startup.
 - **Frontend:** *Review* and *Fact-check* tabs. In Fact-check, each claim's source sentence is highlighted green, red or grey; clicking one opens a panel with the claim, explanation and cited sentence with the paper title. Claims whose source sentence can't be found in the text are listed below it.
 
 ## Decisions
@@ -154,7 +155,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | done |
 | 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | done |
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | done |
-| 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | todo |
+| 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | done |
 | 8 | Frontend | Tabs, highlighted claims, evidence panel | todo |
 | 9 | Documentation | current-state, roadmap, MAP, this file's Outcome | todo |
 

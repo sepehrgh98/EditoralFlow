@@ -2,7 +2,7 @@
 
 An AI editorial desk: it reviews a draft for quality and fit with house rules, checks every factual statement against trusted sources with citations (or says "can't tell"), and lets a human editor approve it.
 
-**Status:** Phase 0 (clean foundation) is built. Today the app reviews an article for grammar and style; fact-checking arrives in Phase 1. See the [roadmap](documentation/product/roadmap.md).
+**Status:** Phase 1 is in progress. The frontend reviews an article for grammar and style, and the backend can fact-check a draft against SciFact. See the [roadmap](documentation/product/roadmap.md).
 
 ## How it works
 
@@ -47,16 +47,23 @@ ollama pull qwen3:8b
 cp backend/.env.example backend/.env
 ```
 
-**3. Start the backend**, either way:
+**3. Set up fact-checking** (optional, before starting the backend):
+
+```bash
+make data
+ollama pull qwen3:14b   # when using Ollama
+```
+
+**4. Start the backend**, either way:
 
 ```bash
 make dev      # without Docker, logs in this terminal
 make start    # in Docker; then: make logs
 ```
 
-Check it: http://localhost:8000/health should show `{"status":"ok","provider":"ollama"}`. Interactive API docs: http://localhost:8000/docs.
+Open http://localhost:8000/health to check the backend. The `fact_check` field is `ready` when the corpus is indexed and `unavailable` when it could not be loaded.
 
-**4. Start the frontend** in a second terminal:
+**5. Start the frontend** in a second terminal:
 
 ```bash
 cd frontend
@@ -64,7 +71,13 @@ npm install   # first time only
 npm run dev
 ```
 
-**5. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model.
+**6. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model.
+
+### Fact-check an article through the API
+
+Open http://localhost:8000/docs and try `POST /fact-check` with `{"article":"Your draft here."}`. The response includes each claim's verdict, any cited SciFact sentences, and counts by verdict.
+
+If the corpus is missing, `POST /fact-check` returns 503 with setup instructions and grammar and style review remain available. To include fact-checking in `POST /review`, set `REVIEW_INCLUDE_FACT_CHECK=true` and restart. With that flag enabled the server requires a loadable corpus at startup.
 
 ### Using Claude instead of the local model
 
@@ -106,7 +119,7 @@ The backend is split into layers; each layer only calls the one below it.
 
 | Folder | Job |
 | --- | --- |
-| [`backend/app/api/`](backend/app/api/) | HTTP routes: `POST /review`, `GET /health` |
+| [`backend/app/api/`](backend/app/api/) | HTTP routes: `POST /review`, `POST /fact-check`, `GET /health` |
 | [`backend/app/workflows/`](backend/app/workflows/) | The LangGraph graph: which agents run, in what order |
 | [`backend/app/agents/`](backend/app/agents/) | One kind of review each; prompts in `prompts/<agent>/system.txt` and `user.txt` |
 | [`backend/app/llm/`](backend/app/llm/) | The only code that talks to a model: interface, Ollama and Anthropic clients, pricing |

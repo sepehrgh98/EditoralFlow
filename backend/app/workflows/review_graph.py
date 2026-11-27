@@ -10,7 +10,11 @@ from app.agents.grammar import GrammarAgent
 from app.agents.style import StyleAgent
 from app.llm.base import LLMClient, Usage
 from app.models.review import ReviewResponse
-from app.workflows.fact_check_graph import FactCheckGraph, run_fact_check
+from app.workflows.fact_check_graph import (
+    DEFAULT_MAX_CONCURRENCY,
+    FactCheckGraph,
+    run_fact_check,
+)
 from app.workflows.state import ReviewInput, ReviewState, ReviewUpdate
 
 logger = logging.getLogger(__name__)
@@ -43,7 +47,12 @@ def merge_results(state: ReviewState) -> ReviewUpdate:
     return {"response": response}
 
 
-def build_review_graph(llm: LLMClient, fact_check: FactCheckGraph | None = None) -> ReviewGraph:
+def build_review_graph(
+    llm: LLMClient,
+    fact_check: FactCheckGraph | None = None,
+    *,
+    fact_check_max_concurrency: int = DEFAULT_MAX_CONCURRENCY,
+) -> ReviewGraph:
     """Build and compile the graph once; it can then run any number of reviews.
 
     With `fact_check`, the fact-check graph runs as a third parallel branch (ADR 0010).
@@ -70,7 +79,9 @@ def build_review_graph(llm: LLMClient, fact_check: FactCheckGraph | None = None)
         fact_check_graph = fact_check
 
         async def fact_check_branch(state: ReviewState) -> ReviewUpdate:
-            result, usage = await run_fact_check(fact_check_graph, state["article"])
+            result, usage = await run_fact_check(
+                fact_check_graph, state["article"], max_concurrency=fact_check_max_concurrency
+            )
             return {"fact_check_result": result, "usage": usage}
 
         graph.add_node("fact_check", fact_check_branch)
