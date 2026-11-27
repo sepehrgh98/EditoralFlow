@@ -1,5 +1,6 @@
-.PHONY: start stop restart rebuild logs ps
+.PHONY: start stop restart rebuild logs ps install lint format typecheck test check
 
+# --- Docker ---
 start:
 	docker compose up -d backend
 
@@ -17,3 +18,21 @@ logs:
 
 ps:
 	docker compose ps
+
+# --- Local development (uv) ---
+install:
+	uv sync
+
+lint:
+	uv run ruff check .
+
+format:
+	uv run ruff format .
+
+typecheck:
+	uv run pyright
+
+test:
+	uv run pytest
+
+check: lint typecheck test
