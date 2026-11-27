@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.agents.base import BaseAgent, load_prompt
+from app.agents.base import BaseAgent, ReviewAgent, load_prompt
 from app.agents.grammar import GrammarAgent
 from app.agents.style import StyleAgent
 from app.llm.base import LLMError, LLMOutputError
@@ -39,7 +39,7 @@ def test_missing_prompt_fails_when_agent_is_created() -> None:
 
 
 @pytest.mark.parametrize("agent_class", [GrammarAgent, StyleAgent])
-async def test_agent_sends_system_prompt_and_article(agent_class: type[BaseAgent]) -> None:
+async def test_agent_sends_system_prompt_and_article(agent_class: type[ReviewAgent]) -> None:
     llm = FakeLLM([ANSWER])
     agent = agent_class(llm)
 

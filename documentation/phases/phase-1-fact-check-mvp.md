@@ -114,7 +114,9 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 | `ClaimResult` | `claim`, `verdict`, `retrieved_doc_ids` (for debugging and Phase 2) |
 | `FactCheckResponse` | `results`, counts per label |
 
-**`BaseAgent` change:** it becomes generic: each agent declares its answer shape and fills named slots (`{article}`, `{claim}`, `{passages}`). Grammar and style keep working unchanged.
+**`BaseAgent` change:** it becomes generic, `BaseAgent[R]`: each agent declares `output_schema`, its `slots` (e.g. `("claim", "passages")`) and `tier`. At creation `user.txt` must contain exactly those slots; `run(**values)` requires exactly those values and fills all slots in one pass, so slot-like text inside a value stays as written. `ReviewAgent` (answer `AgentResult`, slot `article`, method `review(article)`) is what grammar and style now extend, so the review graph and API are unchanged.
+
+`FactCheckResponse.counts` is computed from `results`, never set separately.
 
 ## API and frontend
 
@@ -140,7 +142,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | --- | --- | --- | --- |
 | 1 | Corpus | `scripts/download_scifact.py`, `make data`, `retrieval/corpus.py`, fixture corpus, tests | done |
 | 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | done |
-| 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | todo |
+| 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | done |
 | 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | todo |
 | 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | todo |
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | todo |

@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 2 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, but nothing in the app uses it yet.
+Snapshot during Phase 1, after commit 3 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, and the fact-check data shapes exist, but nothing in the app uses them yet.
 
 ## What it does
 
@@ -37,14 +37,15 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/llm/anthropic.py` | `AnthropicClient`: Claude via JSON outputs; SDK retries/backoff and timeout from settings; refusal and cut-off errors; one retry on an invalid answer |
 | `backend/app/llm/pricing.py` | Price table and `estimate_cost()` |
 | `backend/app/llm/factory.py` | `build_llm_client(settings)` picks the client from `LLM_PROVIDER` |
-| `backend/app/agents/base.py` | `BaseAgent`: loads `prompts/<agent>/system.txt` and `user.txt`, fills in the article, calls `generate_structured`, returns result + usage |
-| `backend/app/agents/grammar.py`, `style.py` | `GrammarAgent`, `StyleAgent`: name their prompt folder |
+| `backend/app/agents/base.py` | Generic `BaseAgent[R]`: loads `prompts/<agent>/system.txt` and `user.txt`, checks the declared slots, fills them in one pass (`run(**values)`), calls `generate_structured` with the agent's `output_schema` and `tier`, returns result + usage. `ReviewAgent` adds `review(article)` with `AgentResult` |
+| `backend/app/agents/grammar.py`, `style.py` | `GrammarAgent`, `StyleAgent`: `ReviewAgent`s that name their prompt folder |
 | `backend/app/agents/prompts/` | `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
 | `backend/app/retrieval/corpus.py` | `Document` (doc id, title, numbered sentences), `Corpus` (count, iterate, lookup by id), `load_corpus(path)` for SciFact-format files; clear errors for a missing or broken file. Not used by the app yet |
 | `backend/app/retrieval/base.py` | `Passage` (document + score) and the async `Retriever` interface: `search(query, k)` |
 | `backend/app/retrieval/bm25.py` | `BM25Retriever` (`bm25s` + English stemming, stopwords dropped), title + abstract indexed in memory (about 0.35 s for 5,183 abstracts); returns up to k passages with score > 0. Not used by the app yet |
 | `backend/scripts/download_scifact.py` | `make data`: downloads the official SciFact release once into `backend/data/scifact/` (gitignored), keeps `corpus.jsonl` (5,183 abstracts) and the claim files, extracting only those named files |
 | `backend/app/models/review.py` | `Issue`, `AgentResult` (score 0-100), `ReviewResponse`, with field descriptions the model reads |
+| `backend/app/models/fact_check.py` | `Claim`, `Citation`, `Verdict` (labels `supported` / `contradicted` / `not_enough_info`), `ClaimResult`, `FactCheckResponse` with `counts` computed from results. Not used by the app yet |
 | `backend/app/workflows/state.py` | `ReviewInput`, `ReviewState` (with a `usage` reducer), `ReviewUpdate` |
 | `backend/app/workflows/review_graph.py` | LangGraph graph: Prepare draft -> Grammar and Style in parallel -> Merge results; `build_review_graph(llm)`, `run_review(graph, article)` |
 | `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory, pricing, agent, graph and API tests); `fixtures/scifact_corpus.jsonl` is a 5-abstract fictional corpus used instead of the download; `fakes.py` holds `FakeLLM` (canned answers in order or from a responder function, schema validation, call recording); async tests via pytest-asyncio |
