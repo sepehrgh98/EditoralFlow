@@ -1,4 +1,4 @@
-.PHONY: start stop restart rebuild logs ps dev install lint format typecheck test check
+.PHONY: start stop restart rebuild logs ps dev install hooks lint format typecheck test test-live check
 
 # --- Docker ---
 start:
@@ -29,6 +29,7 @@ install:
 
 lint:
 	uv run ruff check .
+	uv run ruff format --check .
 
 format:
 	uv run ruff format .
@@ -38,5 +39,13 @@ typecheck:
 
 test:
 	uv run pytest
+
+# Calls the real model from your settings (Ollama: free). Not run by check or CI.
+test-live:
+	uv run pytest -m live -v
+
+# Turn on the pre-commit checks for this clone (once)
+hooks:
+	cd .. && uv run --project backend pre-commit install
 
 check: lint typecheck test

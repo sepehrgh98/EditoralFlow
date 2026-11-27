@@ -1,4 +1,4 @@
-.PHONY: start stop restart rebuild logs ps dev check
+.PHONY: start stop restart rebuild logs ps dev check test-live hooks
 
 start:
 	$(MAKE) -C backend start
@@ -23,3 +23,9 @@ dev:
 
 check:
 	$(MAKE) -C backend check
+
+test-live:
+	$(MAKE) -C backend test-live
+
+hooks:
+	$(MAKE) -C backend hooks

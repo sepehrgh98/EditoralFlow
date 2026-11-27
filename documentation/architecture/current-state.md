@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 0, after commit 7 of 9: the app runs on the new layered backend. CI (commit 8) and the README (commit 9) are still to come.
+Snapshot during Phase 0, after commit 8 of 9: the app runs on the new layered backend and CI checks every push. The README (commit 9) is still to come.
 
 ## What it does
 
@@ -47,13 +47,17 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/.env.example` | Every setting with defaults and comments |
 | `backend/pyproject.toml`, `uv.lock`, `.python-version` | Dependencies and ruff/pyright/pytest config, managed by uv; Python pinned to 3.12 to match the Docker image |
 | `backend/Dockerfile`, `docker-compose.yml` | Backend image installed from the lock; Compose points `OLLAMA_HOST` at the Mac (`host.docker.internal`), since Ollama runs natively for GPU access |
-| `Makefile`, `backend/Makefile` | `make start` / `stop` / `logs` (Docker), `make dev` (without Docker), `make check` (lint, typecheck, tests) |
+| `Makefile`, `backend/Makefile` | `make start` / `stop` / `logs` (Docker), `make dev` (without Docker), `make check` (ruff lint + format check, pyright, tests), `make test-live` (real model), `make hooks` (turn on pre-commit) |
+| `.github/workflows/ci.yml` | GitHub Actions: on every push and pull request, ruff, pyright and pytest for the backend (fake LLM only, no cost) |
+| `.pre-commit-config.yaml` | ruff check and format on changed backend files at each commit |
+| `backend/tests/test_live.py` | Live tests against the model in settings; marker `live`, skipped unless `make test-live` |
 | `frontend/` | Next.js page showing scores and issues (unchanged) |
 | `Expert.docx` | Original 10-phase plan |
 
 ## Known weaknesses
 
-- No CI yet (commit 8); README not written yet (commit 9).
+- README not written yet (commit 9).
+- Frontend has no tests or lint in CI.
 - The local 8B model sometimes reports an issue under the wrong agent (a style issue from the grammar agent) or merges two problems into one issue. Prompt tuning and measurement come with evaluations in Phase 2.
 - Ollama answers one request at a time unless `OLLAMA_NUM_PARALLEL` is raised, so the two agents' calls queue there.
 - If one agent fails, the whole review fails; partial results are left for a later phase.

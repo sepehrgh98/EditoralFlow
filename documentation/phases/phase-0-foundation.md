@@ -165,8 +165,9 @@ flowchart TD
 
 - **uv** + `pyproject.toml` replace `requirements.txt`.
 - **ruff** (lint and format), **pyright** (types), **pytest**.
-- **Tests:** prompt loading; agent parsing with `FakeLLM`; LLM client retry and validation logic with a mocked SDK; the graph end to end with `FakeLLM`; the API via FastAPI's test client. A real-API test runs only when `ANTHROPIC_API_KEY` is set.
-- **GitHub Actions:** lint, type check and tests on every push and pull request.
+- **Tests:** prompt loading; agent parsing with `FakeLLM`; LLM client retry and validation logic with a mocked SDK; the graph end to end with `FakeLLM`; the API via FastAPI's test client. **Live tests** (`tests/test_live.py`, marker `live`) call the real model from settings (Ollama by default, free); they are skipped by `make check` and CI and run on purpose with `make test-live`, so nothing can spend money by accident.
+- **GitHub Actions** (`.github/workflows/ci.yml`): on every push and pull request, install with `uv sync --frozen` on Python 3.12, then ruff check, ruff format --check, pyright and pytest (fake LLM only). Frontend lint is not in CI yet; it belongs to a phase that changes the frontend.
+- **pre-commit** (`.pre-commit-config.yaml`): ruff check (with fixes) and ruff format on changed backend files at `git commit`; turn on with `make hooks`, skip once with `git commit --no-verify`.
 
 ## Commit plan
 
@@ -181,7 +182,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; separate system and user prompt files per agent, without JSON instructions; score 0-100; `models/review.py`; new files next to the old ones until commit 7; tests with `FakeLLM` | done |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; `langgraph` dependency; `FakeLLM` responder for parallel tests; tests running the graph with `FakeLLM`, including a proof that the agents run at the same time | done |
 | 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); remove root `docker-compose.yml`, `python-dotenv`; `make dev`; quiet `httpx` logs; API tests; manual check against real Ollama (local and Docker) | done |
-| 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
+| 8 | CI | GitHub Actions: ruff (lint + format), pyright, pytest on push and PR; pre-commit config and `make hooks`; live tests against the configured model, run only with `make test-live` | done |
 | 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
 
 Update the Status column as each commit lands.

@@ -1,0 +1,11 @@
+# Checks that run on `git commit`, only on the changed backend files.
+# Turn on once with: make hooks    Skip for one commit: git commit --no-verify
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.6 # keep equal to the ruff version in backend/uv.lock
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
