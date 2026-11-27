@@ -16,3 +16,8 @@ The project owner wants to understand every change, not just receive code.
 - After each commit: explain what changed, module by module.
 - Then stop and wait for the owner's go before the next commit.
 - Update the commit plan's Status column as commits land.
+
+## Branches and pull requests
+
+- Each phase is built on its own branch from `main` (e.g. `phase-1`).
+- Pull requests always target `main`.

@@ -23,7 +23,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 - **Design:** [phases/phase-0-foundation.md](../phases/phase-0-foundation.md)
 - **Out of scope:** any new feature.
 - **Done when:** CI is green on every push, and the existing grammar and style review still works.
-- **Status:** done (2026-11-27). CI green; merged into `redesign`. See the design file's Outcome.
+- **Status:** done (2026-11-27). CI green; merged into `main`. See the design file's Outcome.
 
 ## Phase 1: Fact-check MVP
 

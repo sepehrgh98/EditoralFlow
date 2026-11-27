@@ -171,7 +171,7 @@ flowchart TD
 
 ## Commit plan
 
-Work happens on branch `phase-0`, merged into `redesign` by pull request. Every commit leaves the app working. Follow the implementation workflow in `AGENTS.md`: explain before each commit, explain module by module after it, then stop for review.
+Work happens on branch `phase-0`, merged by pull request (into `redesign`, then `main`; from now on all pull requests target `main`). Every commit leaves the app working. Follow the implementation workflow in `AGENTS.md`: explain before each commit, explain module by module after it, then stop for review.
 
 | # | Commit | Contents | Status |
 | --- | --- | --- | --- |
@@ -206,7 +206,7 @@ Update the Status column as each commit lands.
 
 ## Outcome
 
-Done on 2026-11-27. Built on branch `phase-0` in the nine planned commits, merged into `redesign` by pull request,, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
+Done on 2026-11-27. Built on branch `phase-0` in the nine planned commits, plus two small ones (moving `FakeLLM` to `tests/`, pinning Python 3.12). Merged into `main` by pull request. The app reviews articles exactly through the planned layers: API, LangGraph graph, agents, LLM layer. 78 tests (76 with a fake model, 2 live), `make check` fully green.
 
 ### What changed from the plan
 
