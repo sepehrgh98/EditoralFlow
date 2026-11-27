@@ -41,7 +41,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | Phase | Design | Status |
 | --- | --- | --- |
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
-| 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | agreed, not started |
+| 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | agreed, in progress |
 
 ## Status values
 

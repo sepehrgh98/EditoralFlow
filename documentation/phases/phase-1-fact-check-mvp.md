@@ -1,7 +1,7 @@
 ---
 title: Phase 1 design - Fact-check MVP
 summary: Check facts end to end in the simplest way that works - extract claims, search SciFact with BM25, verify each claim with a cited source sentence - as a LangGraph subgraph usable alone or inside the review graph.
-status: agreed
+status: agreed, in progress
 updated: 2026-11-27
 ---
 
@@ -137,7 +137,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 
 | # | Commit | Contents | Status |
 | --- | --- | --- | --- |
-| 1 | Corpus | `scripts/download_scifact.py`, `make data`, `retrieval/corpus.py`, fixture corpus, tests | todo |
+| 1 | Corpus | `scripts/download_scifact.py`, `make data`, `retrieval/corpus.py`, fixture corpus, tests | done |
 | 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | todo |
 | 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | todo |
 | 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | todo |

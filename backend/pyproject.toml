@@ -36,7 +36,7 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "SIM"]
 
 [tool.pyright]
-include = ["app", "tests"]
+include = ["app", "tests", "scripts"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 venvPath = "."
