@@ -86,7 +86,8 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 - **Search:** BM25 keyword search with `bm25s`, indexed in memory at startup. No extra service.
 - **Why keyword search only, for now:** it is the measured baseline. Phase 2 measures how often search finds the right abstract; Phase 3 adds vector search and a reranker and shows the improvement against it. Scientific claims share exact terms with their papers, so BM25 is a strong start on SciFact.
 - **Top k:** 3 abstracts per claim (a setting).
-- **`Retriever` interface:** `search(query, k) -> list[Passage]`. Phase 3 adds a hybrid retriever behind it.
+- **`Retriever` interface:** async `search(query, k) -> list[Passage]` (async like the LLM layer, for Phase 3's database-backed search). Phase 3 adds a hybrid retriever behind it.
+- **Matching:** title and abstract are indexed together; words are lowercased, stemmed and stopwords dropped. Abstracts sharing no word with the claim (score 0) are left out, so a search can return fewer than k or none. On the real corpus a single shared word is usually enough to return something, so the verifier, not search, is what turns irrelevant results into "can't tell".
 - **Tests** use a 5-abstract fixture corpus: fast, no download.
 
 ## The two new agents
@@ -138,7 +139,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | # | Commit | Contents | Status |
 | --- | --- | --- | --- |
 | 1 | Corpus | `scripts/download_scifact.py`, `make data`, `retrieval/corpus.py`, fixture corpus, tests | done |
-| 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | todo |
+| 2 | BM25 search | `Retriever` interface, `Passage`, `BM25Retriever` with `bm25s`, tests | done |
 | 3 | Models and generic agent base | `models/fact_check.py`; `BaseAgent` with a generic answer shape and named slots; grammar/style tests still pass | todo |
 | 4 | Claim extractor | Agent, prompts, tests with `FakeLLM` | todo |
 | 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | todo |
