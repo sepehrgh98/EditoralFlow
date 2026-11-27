@@ -108,3 +108,22 @@ async def test_usage_is_recorded_with_tier() -> None:
 def test_usage_rejects_negative_values() -> None:
     with pytest.raises(ValueError):
         Usage(model="m", input_tokens=-1, output_tokens=0, latency_ms=0)
+
+
+async def test_responder_picks_answer_from_the_call() -> None:
+    async def responder(call: FakeCall) -> str:
+        return "for grammar" if "grammar" in call.prompt else "for style"
+
+    llm = FakeLLM(responder=responder)
+
+    assert (await llm.generate("check style")).content == "for style"
+    assert (await llm.generate("check grammar")).content == "for grammar"
+    assert len(llm.calls) == 2
+
+
+async def test_responder_can_raise() -> None:
+    async def responder(call: FakeCall) -> Exception:
+        return LLMError("down")
+
+    with pytest.raises(LLMError, match="down"):
+        await FakeLLM(responder=responder).generate("p")

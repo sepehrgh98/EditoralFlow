@@ -4,7 +4,7 @@ Lives in tests/ because only tests use it; production code never imports from he
 """
 
 from collections import deque
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -27,15 +27,25 @@ class FakeCall:
     schema: type[BaseModel] | None = None
 
 
+# Picks the answer from the request; async so a test can make a call wait.
+Responder = Callable[["FakeCall"], Awaitable[FakeAnswer]]
+
+
 class FakeLLM(LLMClient):
     """Returns the given answers in order, one per call.
+
+    Or, with `responder`, asks that function for each answer. Use it when the order of
+    calls is not fixed, for example when agents run in parallel.
 
     Structured answers are validated against the requested schema, exactly like a real
     client would, so a test with wrongly shaped data fails.
     """
 
-    def __init__(self, answers: Iterable[FakeAnswer] = ()) -> None:
+    def __init__(
+        self, answers: Iterable[FakeAnswer] = (), *, responder: Responder | None = None
+    ) -> None:
         self._answers: deque[FakeAnswer] = deque(answers)
+        self._responder = responder
         self.calls: list[FakeCall] = []
 
     def add(self, *answers: FakeAnswer) -> None:
@@ -49,8 +59,9 @@ class FakeLLM(LLMClient):
         system: str | None = None,
         tier: ModelTier = "fast",
     ) -> LLMResponse[str]:
-        self.calls.append(FakeCall("generate", prompt, system, tier))
-        answer = self._next_answer()
+        call = FakeCall("generate", prompt, system, tier)
+        self.calls.append(call)
+        answer = await self._answer_for(call)
         if not isinstance(answer, str):
             raise TypeError(f"generate() needs a str answer, got {type(answer).__name__}")
         return LLMResponse(content=answer, usage=self._usage(tier))
@@ -63,8 +74,9 @@ class FakeLLM(LLMClient):
         system: str | None = None,
         tier: ModelTier = "fast",
     ) -> LLMResponse[S]:
-        self.calls.append(FakeCall("generate_structured", prompt, system, tier, schema))
-        answer = self._next_answer()
+        call = FakeCall("generate_structured", prompt, system, tier, schema)
+        self.calls.append(call)
+        answer = await self._answer_for(call)
         try:
             if isinstance(answer, str):
                 content = schema.model_validate_json(answer)
@@ -75,6 +87,14 @@ class FakeLLM(LLMClient):
         except ValidationError as exc:
             raise LLMOutputError(f"Answer does not match {schema.__name__}: {exc}") from exc
         return LLMResponse(content=content, usage=self._usage(tier))
+
+    async def _answer_for(self, call: FakeCall) -> FakeAnswer:
+        if self._responder is None:
+            return self._next_answer()
+        answer = await self._responder(call)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
 
     def _next_answer(self) -> FakeAnswer:
         if not self._answers:

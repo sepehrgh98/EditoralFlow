@@ -66,7 +66,7 @@ backend/
     core/              config.py (pydantic-settings), logging.py
     llm/               base.py (LLMClient, Usage), ollama.py, anthropic.py, pricing.py, factory.py
     agents/            base.py, grammar.py, style.py, prompts/<agent>/system.txt + user.txt
-    workflows/         state.py (ReviewState), review_graph.py
+    workflows/         state.py (ReviewInput, ReviewState, ReviewUpdate), review_graph.py
     models/            review.py (Issue, AgentResult, ReviewResponse)
   tests/             test_*.py, fakes.py (FakeLLM, test-only)
   pyproject.toml       dependencies and tool config via uv
@@ -87,7 +87,10 @@ flowchart LR
     merge --> done([END: same JSON as today])
 ```
 
-- **State (`ReviewState`):** a typed dict carrying `article`, `grammar_result`, `style_result`, and a `usage` list that each node appends its LLM usage to (a LangGraph reducer, so parallel nodes don't overwrite each other).
+- **State (`ReviewState`):** a typed dict carrying `article`, `grammar_result`, `style_result`, `response`, and a `usage` list that each node appends its LLM usage to (a LangGraph reducer, so parallel nodes don't overwrite each other). `ReviewInput` (just `article`) is what a review starts with; `ReviewUpdate` is the partial dict a node returns.
+- **Prepare draft** trims the article and unifies line endings. **Merge results** builds `ReviewResponse` and logs one line per review with calls, tokens, LLM time and cost.
+- **Errors:** if an agent fails, the whole review fails with that `LLMError` (same as before). Partial results (one agent's answer when the other failed) are left for a later phase, because the frontend would need to change.
+- `build_review_graph(llm)` compiles the graph; `run_review(graph, article)` returns the response and all usage records.
 - **Nodes** are thin wrappers: each calls one agent and returns only the state keys it changes.
 - **The graph is compiled once at startup** and handed to the API route.
 - No checkpointer, human pause or loops yet. Those arrive in later phases.
@@ -173,7 +176,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 3 | LLM interface and fake (`llm/base.py`, `tests/fakes.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
 | 4 | Real LLM clients (`llm/ollama.py`, `llm/anthropic.py`) | Ollama (default, free) and Anthropic clients; structured output via JSON outputs, Pydantic validation + one retry, timeout, SDK backoff on rate limits, token/latency/cost tracking; `pricing.py`, `factory.py`; settings switch to Ollama; ADRs 0005 and 0006; tests with stand-in SDKs | done |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; separate system and user prompt files per agent, without JSON instructions; score 0-100; `models/review.py`; new files next to the old ones until commit 7; tests with `FakeLLM` | done |
-| 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |
+| 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; `langgraph` dependency; `FakeLLM` responder for parallel tests; tests running the graph with `FakeLLM`, including a proof that the agents run at the same time | done |
 | 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); API tests; manual frontend check | todo |
 | 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
 | 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
