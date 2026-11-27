@@ -1,4 +1,7 @@
-"""A stand-in LLM for tests: returns canned answers and records every call."""
+"""Test doubles. `FakeLLM` is a stand-in LLM: returns canned answers and records every call.
+
+Lives in tests/ because only tests use it; production code never imports from here.
+"""
 
 from collections import deque
 from collections.abc import Iterable

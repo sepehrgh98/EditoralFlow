@@ -36,13 +36,12 @@ flowchart TD
         subgraph llm[llm/: the only code that talks to a model]
             anth[AnthropicClient<br/>tool use, retries, timeout, usage log]
             oai[OpenAIClient<br/>optional]
-            fake[FakeLLM<br/>used by tests]
         end
         core[core/<br/>settings, logging]
         models[models/<br/>Pydantic schemas]
     end
     anth --> claude[Claude API]
-    tests[tests/<br/>pytest + FakeLLM] --> ci[GitHub Actions CI]
+    tests[tests/<br/>pytest + FakeLLM in fakes.py] --> ci[GitHub Actions CI]
 ```
 
 | Folder | Its one job | Belongs here if it... |
@@ -64,11 +63,11 @@ backend/
     main.py            app factory: builds settings, LLM client, graph on startup
     api/               review.py (POST /review), health.py (GET /health)
     core/              config.py (pydantic-settings), logging.py
-    llm/               base.py (LLMClient interface, Usage), anthropic.py, openai.py, fake.py
+    llm/               base.py (LLMClient interface, Usage), anthropic.py, openai.py
     agents/            base.py, grammar.py, style.py, prompts/
     workflows/         state.py (ReviewState), review_graph.py
     models/            review.py (Issue, AgentResult, ReviewResponse)
-  tests/
+  tests/             test_*.py, fakes.py (FakeLLM, test-only)
   pyproject.toml       dependencies and tool config via uv
 .github/workflows/ci.yml
 ```
@@ -137,7 +136,7 @@ flowchart TD
 - **Reliability:** timeout, retries with exponential backoff on rate-limit and server errors.
 - **Usage record** per call: model, input/output tokens, latency, estimated cost. Logged and returned, so the Phase 7 cost dashboard has data from day one.
 - **Models from settings:** no hard-coded model names.
-- **`FakeLLM`:** returns canned responses for tests.
+- **`FakeLLM`:** returns canned responses for tests. Lives in `tests/fakes.py`, not `app/`, because only tests use it.
 - The duplicate `services/llm/llm_service.py` is deleted.
 
 ## Agents
@@ -166,7 +165,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | --- | --- | --- | --- |
 | 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
 | 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
-| 3 | LLM interface and fake (`llm/base.py`, `llm/fake.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
+| 3 | LLM interface and fake (`llm/base.py`, `tests/fakes.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
 | 4 | Real LLM clients (`llm/anthropic.py`, `llm/openai.py`) | Structured output via tool use, Pydantic validation + one retry, timeout, backoff on rate limits, token/latency/cost tracking; tests with a mocked SDK | todo |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |

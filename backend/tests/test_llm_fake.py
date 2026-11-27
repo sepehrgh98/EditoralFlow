@@ -2,7 +2,7 @@ import pytest
 from pydantic import BaseModel
 
 from app.llm.base import LLMClient, LLMError, LLMOutputError, LLMResponse, Usage
-from app.llm.fake import FakeCall, FakeLLM
+from tests.fakes import FakeCall, FakeLLM
 
 
 class Verdict(BaseModel):
