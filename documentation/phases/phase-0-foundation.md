@@ -1,7 +1,7 @@
 ---
 title: Phase 0 design - Clean foundation
 summary: Restructure the backend into layers, make LLM calls structured and tracked, run the existing agents as a minimal LangGraph graph, and add tests and CI. No new features.
-status: agreed
+status: agreed, in progress
 updated: 2026-11-27
 ---
 
@@ -163,7 +163,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | # | Commit | Contents | Status |
 | --- | --- | --- | --- |
 | 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
-| 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | todo |
+| 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
 | 3 | LLM interface and fake (`llm/base.py`, `llm/fake.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | todo |
 | 4 | Real LLM clients (`llm/anthropic.py`, `llm/openai.py`) | Structured output via tool use, Pydantic validation + one retry, timeout, backoff on rate limits, token/latency/cost tracking; tests with a mocked SDK | todo |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |

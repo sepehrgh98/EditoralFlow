@@ -33,7 +33,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 
 | Phase | Design | Status |
 | --- | --- | --- |
-| 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | agreed, not started |
+| 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | agreed, in progress |
 
 ## Status values
 
