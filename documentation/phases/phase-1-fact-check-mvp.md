@@ -131,7 +131,7 @@ frontend/src/app/page.tsx     CHANGED: Review | Fact-check tabs, highlighted cla
 - **`POST /fact-check`** takes `{"article": "..."}` and returns a `FactCheckResponse`. Same error handling as `/review` (502 bad model output, 503 model unreachable).
 - **`POST /review`** is unchanged by default; with `REVIEW_INCLUDE_FACT_CHECK=true` it also returns `fact_check_result`.
 - **Startup and readiness:** the server indexes the corpus at startup. If loading fails, grammar and style review remain available by default, `GET /health` reports `fact_check: unavailable`, and `POST /fact-check` returns 503 with the reason. With `REVIEW_INCLUDE_FACT_CHECK=true`, a corpus load failure stops startup.
-- **Frontend:** *Review* and *Fact-check* tabs. In Fact-check, each claim's source sentence is highlighted green, red or grey; clicking one opens a panel with the claim, explanation and cited sentence with the paper title. Claims whose source sentence can't be found in the text are listed below it.
+- **Frontend:** *Review* and *Fact-check* tabs. In Fact-check, each claim's source sentence is highlighted green, red or grey; clicking one opens a panel with the claim, explanation and cited sentence with the paper title. Claims whose source sentence can't be found in the text are listed below it. A sentence with multiple claims opens a claim selector in the evidence panel. Highlights with conflicting verdicts use blue, and the selector shows each verdict separately.
 
 ## Decisions
 
@@ -156,7 +156,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | 5 | Verifier | Agent, prompts, sentence-number citations, proof-or-abstain guard, tests | done |
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | done |
 | 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | done |
-| 8 | Frontend | Tabs, highlighted claims, evidence panel | todo |
+| 8 | Frontend | Tabs, highlighted claims, evidence panel | done |
 | 9 | Documentation | current-state, roadmap, MAP, this file's Outcome | todo |
 
 ## Done when

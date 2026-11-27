@@ -2,7 +2,7 @@
 
 An AI editorial desk: it reviews a draft for quality and fit with house rules, checks every factual statement against trusted sources with citations (or says "can't tell"), and lets a human editor approve it.
 
-**Status:** Phase 1 is in progress. The frontend reviews an article for grammar and style, and the backend can fact-check a draft against SciFact. See the [roadmap](documentation/product/roadmap.md).
+**Status:** Phase 1 is in progress. The frontend offers grammar and style review and fact-checking against SciFact. See the [roadmap](documentation/product/roadmap.md).
 
 ## How it works
 
@@ -71,7 +71,7 @@ npm install   # first time only
 npm run dev
 ```
 
-**6. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model.
+**6. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model. Choose **Fact-check** to check the draft against SciFact, then select a highlighted sentence to inspect the verdict and cited evidence.
 
 ### Fact-check an article through the API
 

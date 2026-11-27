@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 7 of 9. The frontend offers grammar and style review. The API exposes fact-checking through `POST /fact-check` and can include it in `POST /review` when enabled.
+Snapshot during Phase 1, after commit 8 of 9. The frontend offers grammar and style review and a Fact-check tab with highlighted draft sentences and citation details. The API exposes fact-checking through `POST /fact-check` and can include it in `POST /review` when enabled.
 
 ## What it does
 
@@ -15,7 +15,7 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 
 ## Request flow
 
-1. `frontend/src/app/page.tsx` sends the article to `POST /review` (unchanged).
+1. `frontend/src/app/page.tsx` sends the shared draft to `POST /review` or `POST /fact-check` based on the selected tab.
 2. `backend/app/api/review.py` validates the body and runs the review graph built at startup.
 3. `backend/app/workflows/review_graph.py`: Prepare draft tidies the text, then Grammar and Style run at the same time, then Merge results builds the response and logs the review's total tokens, time and cost.
 4. Each agent (`backend/app/agents/`) sends its system prompt and the article to `LLMClient.generate_structured(..., AgentResult)`.
@@ -64,7 +64,8 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `.github/workflows/ci.yml` | GitHub Actions: on every push and pull request, ruff, pyright and pytest for the backend (fake LLM only, no cost) |
 | `.pre-commit-config.yaml` | ruff check and format on changed backend files at each commit |
 | `backend/tests/test_live.py` | Live tests against the model in settings; marker `live`, skipped unless `make test-live` |
-| `frontend/` | Next.js page showing scores and issues (unchanged) |
+| `frontend/src/app/page.tsx` | Shared draft with Review and Fact-check modes, sends API requests and displays review scores and issues |
+| `frontend/src/app/fact-check.tsx` | Matches claim source sentences against the draft, highlights verdicts and shows evidence for matched and unmatched claims |
 | `Expert.docx` | Original 10-phase plan |
 
 ## Known weaknesses
@@ -74,4 +75,4 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 - Ollama answers one request at a time unless `OLLAMA_NUM_PARALLEL` is raised, so the two agents' calls queue there.
 - The style check judges against general good writing, not a house style guide; the Phase 5 style-guide agent will retrieve the publication's rules and cite them.
 - If one agent fails, the whole review fails; partial results are left for a later phase.
-- The frontend shows a generic error message; the precise reason is in the backend logs and the response `detail`.
+- The Review tab shows a generic error. The Fact-check tab displays the backend error detail when available.
