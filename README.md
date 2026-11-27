@@ -2,7 +2,7 @@
 
 An AI editorial desk: it reviews a draft for quality and fit with house rules, checks every factual statement against trusted sources with citations (or says "can't tell"), and lets a human editor approve it.
 
-**Status:** Phase 1 is in progress. The frontend offers grammar and style review and fact-checking against SciFact. See the [roadmap](documentation/product/roadmap.md).
+**Status:** The Phase 1 Fact-check MVP is complete. The frontend offers grammar and style review and fact-checking against SciFact. See the [roadmap](documentation/product/roadmap.md).
 
 ## How it works
 

@@ -1,7 +1,7 @@
 ---
 title: Phase 1 design - Fact-check MVP
 summary: Check facts end to end in the simplest way that works - extract claims, search SciFact with BM25, verify each claim with a cited source sentence - as a LangGraph subgraph usable alone or inside the review graph.
-status: agreed, in progress
+status: done
 updated: 2026-11-27
 ---
 
@@ -157,17 +157,33 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 | 6 | Fact-check graph | Subgraph with reducers, `Send` per claim, retrieve + verify, collect; optional branch of the review graph; tests for both | done |
 | 7 | API | `POST /fact-check`, startup wiring, settings, `/review` flag, API tests | done |
 | 8 | Frontend | Tabs, highlighted claims, evidence panel | done |
-| 9 | Documentation | current-state, roadmap, MAP, this file's Outcome | todo |
+| 9 | Documentation | current-state, roadmap, MAP, this file's Outcome | done |
 
 ## Done when
 
-- [ ] `make data` downloads the corpus; the app starts with it indexed.
-- [ ] Pasting a science paragraph shows coloured claims with real SciFact citations.
-- [ ] A claim with no relevant source shows "can't tell" with no citation.
-- [ ] Every citation's text exists word for word in the corpus.
-- [ ] `make check` is green; `/review` works unchanged by default.
-- [ ] A quick manual try on 5 SciFact claims is noted in the Outcome (real measurement is Phase 2).
+- [x] `make data` downloads the corpus; the app starts with it indexed.
+- [x] Pasting a science paragraph shows coloured claims with real SciFact citations.
+- [x] A claim with no relevant source shows "can't tell" with no citation.
+- [x] Every citation's text exists word for word in the corpus.
+- [x] `make check` is green; `/review` works unchanged by default.
+- [x] A quick manual try on 5 SciFact claims is noted in the Outcome (real measurement is Phase 2).
 
 ## Outcome
 
-To be filled in when the phase is complete.
+Phase 1 implementation completed on 2026-11-27 on `phase-1`. The frontend and `POST /fact-check` check draft claims against SciFact. The default `POST /review` response continues to contain grammar and style results.
+
+### Live verification
+
+The original `make data` run downloaded the corpus, and rerunning it reused the local files. The backend indexed 5,183 abstracts at startup and reported fact-checking ready. One browser submission used five SciFact development claims in a single draft with Ollama `qwen3:8b` for extraction and `qwen3:14b` for verification.
+
+| SciFact dev ID | Draft claim topic | SciFact annotation | App verdict | Citations returned |
+| --- | --- | --- | --- | --- |
+| 130 | Greater citation likelihood for open-access articles | Support | Supported | 2 |
+| 53 | ALDH1 expression and poorer breast cancer prognosis | Support | Supported | 1 |
+| 54 | AMPK activation increasing lung fibrosis | Contradict | Contradicted | 7 |
+| 129 | Lower citation likelihood for open-access articles | Contradict | Contradicted | 3 |
+| 1 | Inductive properties of 0-dimensional biomaterials | No annotated evidence | Can't tell | 0 |
+
+All five draft sentences were highlighted and opened their evidence panels. All 13 displayed citations matched the source title and exact abstract sentence at the returned document ID and sentence index. The fact-check took about 70 seconds with the local models. The same browser session verified that default review returned only grammar and style results.
+
+`make check` passed Ruff, formatting, Pyright and 165 tests. This five-claim smoke check used a selected sample. Phase 2 will measure verdict accuracy, retrieval recall and citation quality systematically.

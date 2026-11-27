@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 8 of 9. The frontend offers grammar and style review and a Fact-check tab with highlighted draft sentences and citation details. The API exposes fact-checking through `POST /fact-check` and can include it in `POST /review` when enabled.
+Snapshot after Phase 1. The frontend offers grammar and style review and a Fact-check tab with highlighted draft sentences and citation details. The API exposes fact-checking through `POST /fact-check` and can include it in `POST /review` when enabled.
 
 ## What it does
 
@@ -70,7 +70,7 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 
 ## Known weaknesses
 
-- Frontend has no tests or lint in CI.
+- Frontend has no automated checks in CI. Phase 1 verified the live browser flow on five SciFact claims. Systematic evaluation is planned for Phase 2.
 - The local 8B model sometimes reports an issue under the wrong agent (a style issue from the grammar agent) or merges two problems into one issue. Prompt tuning and measurement come with evaluations in Phase 2.
 - Ollama answers one request at a time unless `OLLAMA_NUM_PARALLEL` is raised, so the two agents' calls queue there.
 - The style check judges against general good writing, not a house style guide; the Phase 5 style-guide agent will retrieve the publication's rules and cite them.

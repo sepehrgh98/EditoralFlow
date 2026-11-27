@@ -32,6 +32,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 - **Design:** [phases/phase-1-fact-check-mvp.md](../phases/phase-1-fact-check-mvp.md)
 - **Out of scope:** vector search, retries, orchestration, the queue.
 - **Done when:** you paste a paragraph and see coloured claims with real citations.
+- **Status:** implementation complete (2026-11-27). The live browser check confirmed highlights, exact SciFact quotations and an abstention without citations. See the design file's Outcome.
 
 ## Phase 2: Evaluation harness
 

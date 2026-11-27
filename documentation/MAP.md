@@ -41,11 +41,11 @@ Start here. Every documentation file is listed below with what it answers. Files
 | Phase | Design | Status |
 | --- | --- | --- |
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
-| 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | agreed, in progress (8 of 9 commits) |
+| 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | done |
 
 ## Status values
 
-`agreed` (decided, change only by a new decision) · `current` (describes the code as it is now) · `accepted` / `proposed` / `superseded` (ADRs) · `ongoing` (folder that grows) · `template` / `guide`.
+`agreed` (decided, change only by a new decision) · `done` (phase complete) · `current` (describes the code as it is now) · `accepted` / `proposed` / `superseded` (ADRs) · `ongoing` (folder that grows) · `template` / `guide`.
 
 ## Rules for keeping documentation current
 
