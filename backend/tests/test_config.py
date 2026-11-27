@@ -120,6 +120,7 @@ def test_setup_logging_sets_level_and_is_repeatable() -> None:
 
         assert root.level == logging.WARNING
         assert len(root.handlers) == 1
+        assert logging.getLogger("httpx").level == logging.WARNING
     finally:
         root.handlers = original_handlers
         root.setLevel(original_level)

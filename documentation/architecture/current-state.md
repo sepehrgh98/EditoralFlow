@@ -7,54 +7,54 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot of the codebase during Phase 0 (commit 6 of 9). New `core/`, `llm/`, `models/review.py`, agent and graph code exists but the request flow below still uses the old code. Replace this file's content whenever the structure changes.
+Snapshot during Phase 0, after commit 7 of 9: the app runs on the new layered backend. CI (commit 8) and the README (commit 9) are still to come.
 
 ## What it does
 
-Paste an article in the frontend; a grammar agent and a style agent each return a score, a list of issues and a summary.
+Paste an article in the frontend; a grammar agent and a style agent review it in parallel and each return a score from 0 to 100, a list of issues and a summary. By default the agents run on a local model through Ollama (free); Claude can be used by setting `LLM_PROVIDER=anthropic`.
 
 ## Request flow
 
-1. `frontend/src/app/page.tsx` sends the article to `POST /review`.
-2. `backend/app/routes/review.py` calls `ReviewWorkflow.run(article)`.
-3. `backend/app/workflows/review_workflow.py` runs `GrammarAgent` then `StyleAgent` on a state dict.
-4. `backend/app/agents/base_agent.py` loads the prompt from `agents/prompts/`, fills in the article and calls `llm.generate(prompt)`.
-5. `backend/app/services/llm/anthropic_service.py` calls Claude and returns plain text.
-6. The agent strips code fences, runs `json.loads` and builds an `AgentResult` (`models/agent_result.py`).
+1. `frontend/src/app/page.tsx` sends the article to `POST /review` (unchanged).
+2. `backend/app/api/review.py` validates the body and runs the review graph built at startup.
+3. `backend/app/workflows/review_graph.py`: Prepare draft tidies the text, then Grammar and Style run at the same time, then Merge results builds the response and logs the review's total tokens, time and cost.
+4. Each agent (`backend/app/agents/`) sends its system prompt and the article to `LLMClient.generate_structured(..., AgentResult)`.
+5. `backend/app/llm/ollama.py` (or `anthropic.py`) asks the model for an answer in the `AgentResult` shape, validates it, retries once if invalid, and logs model, tokens, latency and cost.
+6. The API returns `{grammar_result, style_result}`. LLM failures return 503 (unreachable, timeout) or 502 (invalid answer) with a clear `detail`.
 
 ## Files
 
 | Path | Role |
 | --- | --- |
-| `backend/app/main.py` | FastAPI app, CORS |
-| `backend/app/routes/review.py` | `POST /review` |
-| `backend/app/workflows/review_workflow.py` | Old workflow, runs the two agents in sequence; still used by the app; deleted in commit 7 |
-| `backend/app/workflows/state.py` | New `ReviewInput`, `ReviewState` (with a `usage` reducer), `ReviewUpdate` |
-| `backend/app/workflows/review_graph.py` | LangGraph graph: Prepare draft -> Grammar and Style in parallel -> Merge results; `build_review_graph(llm)`, `run_review(graph, article)`. Not used by the app yet |
-| `backend/app/agents/base_agent.py`, `grammar_agent.py`, `style_agent.py`, `prompts/*_prompt.txt` | Old agents and prompts, still used by the app; deleted in commit 7 |
-| `backend/app/services/llm/` | `BaseLLMService`, Anthropic and OpenAI services, factory; `llm_service.py` is a duplicate |
-| `backend/app/models/agent_result.py` | `Issue`, `AgentResult` (old; replaced in commit 7) |
-| `backend/app/models/review.py` | New `Issue`, `AgentResult` (score 0-100), `ReviewResponse`, with field descriptions the model reads. Not used by the app yet |
-| `backend/app/agents/base.py`, `grammar.py`, `style.py` | New `BaseAgent` (loads `prompts/<agent>/system.txt` and `user.txt`, calls `generate_structured`, returns result + usage), `GrammarAgent`, `StyleAgent`. Not used by the app yet |
-| `backend/app/utils/prompt_loader.py` | Reads prompt files |
-| `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider (`ollama` default, or `anthropic`), Ollama host/models/context/thinking, Anthropic key and models, LLM timeout/retries/max tokens, log level, CORS. Fails clearly if Anthropic is chosen without a key. Not wired into the app yet (commit 7) |
-| `backend/app/core/logging.py` | `setup_logging(level)`: one log format for the app. Not wired in yet |
-| `backend/app/llm/ollama.py` | `OllamaClient`: local models via Ollama (default provider, free); JSON-schema `format`, one retry on invalid answer, clear errors when Ollama is down or a model is missing |
-| `backend/app/llm/anthropic.py` | `AnthropicClient`: Claude via JSON outputs; SDK retries/backoff and timeout from settings; refusal and cut-off errors; one retry on invalid answer |
+| `backend/app/main.py` | `create_app()` factory: settings, logging, CORS; at startup builds the LLM client and the graph once. Started with `uvicorn --factory app.main:create_app` |
+| `backend/app/api/review.py` | `POST /review`: rejects blank articles (422), maps `LLMError` to 503 and `LLMOutputError` to 502 |
+| `backend/app/api/health.py` | `GET /health`: `{"status": "ok", "provider": ...}` |
+| `backend/app/api/deps.py` | Reads settings and graph from the app state for the routes |
+| `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider (`ollama` default, or `anthropic`), Ollama host/models/context/thinking, Anthropic key and models, LLM timeout/retries/max tokens, log level, CORS. Fails clearly if Anthropic is chosen without a key |
+| `backend/app/core/logging.py` | `setup_logging(level)`: one log format; quiets per-request logs from `httpx` |
+| `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()` |
+| `backend/app/llm/ollama.py` | `OllamaClient`: local models (default `qwen3:8b` / `qwen3:14b`), JSON-schema `format`, one retry on an invalid answer, clear errors when Ollama is down or a model is missing |
+| `backend/app/llm/anthropic.py` | `AnthropicClient`: Claude via JSON outputs; SDK retries/backoff and timeout from settings; refusal and cut-off errors; one retry on an invalid answer |
 | `backend/app/llm/pricing.py` | Price table and `estimate_cost()` |
 | `backend/app/llm/factory.py` | `build_llm_client(settings)` picks the client from `LLM_PROVIDER` |
-| `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, model tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()`. Not used by the app yet |
-| `backend/.env.example` | Every setting with placeholder values |
-| `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory, pricing, agent and graph tests); `fakes.py` holds `FakeLLM` (canned answers in order or from a responder function, schema validation, call recording); async tests via pytest-asyncio |
+| `backend/app/agents/base.py` | `BaseAgent`: loads `prompts/<agent>/system.txt` and `user.txt`, fills in the article, calls `generate_structured`, returns result + usage |
+| `backend/app/agents/grammar.py`, `style.py` | `GrammarAgent`, `StyleAgent`: name their prompt folder |
+| `backend/app/agents/prompts/` | `grammar/` and `style/`, each with `system.txt` (job, rules, 0-100 score scale) and `user.txt` (`{article}` slot) |
+| `backend/app/models/review.py` | `Issue`, `AgentResult` (score 0-100), `ReviewResponse`, with field descriptions the model reads |
+| `backend/app/workflows/state.py` | `ReviewInput`, `ReviewState` (with a `usage` reducer), `ReviewUpdate` |
+| `backend/app/workflows/review_graph.py` | LangGraph graph: Prepare draft -> Grammar and Style in parallel -> Merge results; `build_review_graph(llm)`, `run_review(graph, article)` |
+| `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory, pricing, agent, graph and API tests); `fakes.py` holds `FakeLLM` (canned answers in order or from a responder function, schema validation, call recording); async tests via pytest-asyncio |
+| `backend/.env.example` | Every setting with defaults and comments |
 | `backend/pyproject.toml`, `uv.lock`, `.python-version` | Dependencies and ruff/pyright/pytest config, managed by uv; Python pinned to 3.12 to match the Docker image |
-| `backend/app/tests/test_anthropic.py` | Manual smoke script, not a real test |
-| `frontend/` | Next.js page showing scores and issues |
+| `backend/Dockerfile`, `docker-compose.yml` | Backend image installed from the lock; Compose points `OLLAMA_HOST` at the Mac (`host.docker.internal`), since Ollama runs natively for GPU access |
+| `Makefile`, `backend/Makefile` | `make start` / `stop` / `logs` (Docker), `make dev` (without Docker), `make check` (lint, typecheck, tests) |
+| `frontend/` | Next.js page showing scores and issues (unchanged) |
 | `Expert.docx` | Original 10-phase plan |
 
-## Known weaknesses (addressed in Phase 0)
+## Known weaknesses
 
-- JSON parsed from free text; breaks on any stray output.
-- Workflow created at import time; a missing API key crashes the app.
-- Hard-coded, outdated model names; duplicate LLM service file.
-- No retries, timeouts, token or cost tracking.
-- No tests, no CI; README was empty.
+- No CI yet (commit 8); README not written yet (commit 9).
+- The local 8B model sometimes reports an issue under the wrong agent (a style issue from the grammar agent) or merges two problems into one issue. Prompt tuning and measurement come with evaluations in Phase 2.
+- Ollama answers one request at a time unless `OLLAMA_NUM_PARALLEL` is raised, so the two agents' calls queue there.
+- If one agent fails, the whole review fails; partial results are left for a later phase.
+- The frontend shows a generic error message; the precise reason is in the backend logs and the response `detail`.

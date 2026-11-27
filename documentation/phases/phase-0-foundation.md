@@ -155,8 +155,11 @@ flowchart TD
 ## API
 
 - Settings load once via `pydantic-settings`; the LLM client and graph are created at startup, so a missing key fails with a clear message instead of an import-time crash.
+- The app is built by a factory, `create_app(settings=None, llm=None)`, started with `uvicorn --factory app.main:create_app`; tests pass their own settings and a `FakeLLM`.
+- Errors: a blank article returns 422; `LLMError` (model unreachable, timeout) returns 503; `LLMOutputError` (invalid answer after a retry) returns 502. The `detail` says what went wrong.
+- `make dev` runs the backend without Docker. In Docker, `OLLAMA_HOST` points at the Mac (`host.docker.internal`), because Ollama runs natively to use the GPU. The unused root `docker-compose.yml` is removed; `backend/docker-compose.yml` is the only one.
 - `POST /review` keeps the current response shape (`grammar_result`, `style_result`), so the frontend does not change.
-- `GET /health` added.
+- `GET /health` added: `{"status": "ok", "provider": ...}`.
 
 ## Quality and tooling
 
@@ -177,7 +180,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | 4 | Real LLM clients (`llm/ollama.py`, `llm/anthropic.py`) | Ollama (default, free) and Anthropic clients; structured output via JSON outputs, Pydantic validation + one retry, timeout, SDK backoff on rate limits, token/latency/cost tracking; `pricing.py`, `factory.py`; settings switch to Ollama; ADRs 0005 and 0006; tests with stand-in SDKs | done |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; separate system and user prompt files per agent, without JSON instructions; score 0-100; `models/review.py`; new files next to the old ones until commit 7; tests with `FakeLLM` | done |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; `langgraph` dependency; `FakeLLM` responder for parallel tests; tests running the graph with `FakeLLM`, including a proof that the agents run at the same time | done |
-| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); API tests; manual frontend check | todo |
+| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow and the `openai` package; Docker reaches host Ollama (`OLLAMA_HOST`); remove root `docker-compose.yml`, `python-dotenv`; `make dev`; quiet `httpx` logs; API tests; manual check against real Ollama (local and Docker) | done |
 | 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
 | 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
 

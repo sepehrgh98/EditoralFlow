@@ -1,4 +1,4 @@
-.PHONY: start stop restart rebuild logs ps
+.PHONY: start stop restart rebuild logs ps dev check
 
 start:
 	$(MAKE) -C backend start
@@ -17,3 +17,9 @@ logs:
 
 ps:
 	$(MAKE) -C backend ps
+
+dev:
+	$(MAKE) -C backend dev
+
+check:
+	$(MAKE) -C backend check
