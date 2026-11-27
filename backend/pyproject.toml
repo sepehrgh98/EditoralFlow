@@ -18,6 +18,7 @@ dependencies = [
 dev = [
     "pyright>=1.1.400",
     "pytest>=8.3",
+    "pytest-asyncio>=1.0",
     "ruff>=0.12",
 ]
 
@@ -42,3 +43,6 @@ venv = ".venv"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Run `async def test_...` functions without a marker on each one
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

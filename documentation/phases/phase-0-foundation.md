@@ -130,7 +130,9 @@ flowchart TD
 
 ## LLM layer
 
-- **Interface `LLMClient`:** `generate(prompt, system=None) -> LLMResponse[str]` and `generate_structured(prompt, schema, system=None) -> LLMResponse[schema]`.
+- **Interface `LLMClient`:** async `generate(prompt, system=None, tier="fast") -> LLMResponse[str]` and `generate_structured(prompt, schema, system=None, tier="fast") -> LLMResponse[schema]` ([ADR 0004](../decisions/0004-async-llm-calls.md)).
+- **Model tiers:** agents ask for `"fast"` or `"strong"`; the client maps the tier to a model name from settings, so agents never name a model or provider.
+- **Errors:** `LLMError` for failed calls, `LLMOutputError` when the answer does not fit the schema.
 - **Structured output via tool use:** the Pydantic schema becomes a tool definition and Claude is required to call it. The arguments are validated with Pydantic; one retry on validation failure.
 - **Reliability:** timeout, retries with exponential backoff on rate-limit and server errors.
 - **Usage record** per call: model, input/output tokens, latency, estimated cost. Logged and returned, so the Phase 7 cost dashboard has data from day one.
@@ -164,7 +166,7 @@ Work happens on branch `phase-0`, merged into `redesign` by pull request. Every 
 | --- | --- | --- | --- |
 | 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
 | 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | done |
-| 3 | LLM interface and fake (`llm/base.py`, `llm/fake.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | todo |
+| 3 | LLM interface and fake (`llm/base.py`, `llm/fake.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | done |
 | 4 | Real LLM clients (`llm/anthropic.py`, `llm/openai.py`) | Structured output via tool use, Pydantic validation + one retry, timeout, backoff on rate limits, token/latency/cost tracking; tests with a mocked SDK | todo |
 | 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |
 | 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |
@@ -178,6 +180,7 @@ Update the Status column as each commit lands.
 
 - [ADR 0002](../decisions/0002-tech-stack.md): tech stack.
 - [ADR 0003](../decisions/0003-langgraph-from-phase-0.md): LangGraph from Phase 0.
+- [ADR 0004](../decisions/0004-async-llm-calls.md): async LLM calls.
 
 ## Done when
 
