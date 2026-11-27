@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot during Phase 1, after commit 5 of 9: the Phase 0 app is unchanged; the SciFact corpus can be downloaded, loaded and searched with BM25, claims can be extracted from a draft and verified against abstracts with cited source sentences, but nothing in the app uses this yet.
+Snapshot during Phase 1, after commit 6 of 9: the Phase 0 app is unchanged; the fact-check graph (extract claims, then search and verify each claim in parallel) works end to end in tests, and the review graph can include it, but the API does not use it yet.
 
 ## What it does
 
@@ -46,10 +46,12 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/retrieval/base.py` | `Passage` (document + score) and the async `Retriever` interface: `search(query, k)` |
 | `backend/app/retrieval/bm25.py` | `BM25Retriever` (`bm25s` + English stemming, stopwords dropped), title + abstract indexed in memory (about 0.35 s for 5,183 abstracts); returns up to k passages with score > 0. Not used by the app yet |
 | `backend/scripts/download_scifact.py` | `make data`: downloads the official SciFact release once into `backend/data/scifact/` (gitignored), keeps `corpus.jsonl` (5,183 abstracts) and the claim files, extracting only those named files |
-| `backend/app/models/review.py` | `Issue`, `AgentResult` (score 0-100), `ReviewResponse`, with field descriptions the model reads |
+| `backend/app/models/review.py` | `Issue`, `AgentResult` (score 0-100), `ReviewResponse` (with optional `fact_check_result`, left out of the JSON when absent), with field descriptions the model reads |
 | `backend/app/models/fact_check.py` | `Claim`, `Citation`, `Verdict` (labels `supported` / `contradicted` / `not_enough_info`), `ClaimResult`, `FactCheckResponse` with `counts` computed from results. Not used by the app yet |
-| `backend/app/workflows/state.py` | `ReviewInput`, `ReviewState` (with a `usage` reducer), `ReviewUpdate` |
-| `backend/app/workflows/review_graph.py` | LangGraph graph: Prepare draft -> Grammar and Style in parallel -> Merge results; `build_review_graph(llm)`, `run_review(graph, article)` |
+| `backend/app/workflows/state.py` | `ReviewInput`, `ReviewState` (with a `usage` reducer and optional `fact_check_result`), `ReviewUpdate` |
+| `backend/app/workflows/review_graph.py` | LangGraph graph: Prepare draft -> Grammar and Style (and Fact-check, if a fact-check graph is given) in parallel -> Merge results; `build_review_graph(llm, fact_check=None)`, `run_review(graph, article)` |
+| `backend/app/workflows/fact_check_state.py` | `FactCheckState` (`results` and `usage` reducers) and the per-claim `ClaimState` |
+| `backend/app/workflows/fact_check_graph.py` | Fact-check graph: `extract_claims` -> `Send` one `check_claim` (retrieve -> verify) per claim -> `collect` (claim order, summary log); `build_fact_check_graph(llm, retriever, top_k=3, max_claims=20)`, `run_fact_check(graph, article, max_concurrency=4)`. Not used by the API yet |
 | `backend/tests/` | pytest suite (config, fake, Ollama, Anthropic, factory, pricing, agent, graph and API tests); `fixtures/scifact_corpus.jsonl` is a 5-abstract fictional corpus used instead of the download; `fakes.py` holds `FakeLLM` (canned answers in order or from a responder function, schema validation, call recording); async tests via pytest-asyncio |
 | `backend/.env.example` | Every setting with defaults and comments |
 | `backend/pyproject.toml`, `uv.lock`, `.python-version` | Dependencies and ruff/pyright/pytest config, managed by uv; Python pinned to 3.12 to match the Docker image |
