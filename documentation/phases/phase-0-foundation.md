@@ -156,6 +156,24 @@ flowchart TD
 - **Tests:** prompt loading; agent parsing with `FakeLLM`; LLM client retry and validation logic with a mocked SDK; the graph end to end with `FakeLLM`; the API via FastAPI's test client. A real-API test runs only when `ANTHROPIC_API_KEY` is set.
 - **GitHub Actions:** lint, type check and tests on every push and pull request.
 
+## Commit plan
+
+Work happens on branch `phase-0`, merged into `redesign` by pull request. Every commit leaves the app working. Follow the implementation workflow in `AGENTS.md`: explain before each commit, explain module by module after it, then stop for review.
+
+| # | Commit | Contents | Status |
+| --- | --- | --- | --- |
+| 1 | Project tooling | `pyproject.toml` + `uv.lock` replace `requirements.txt`; ruff, pyright, pytest config; Dockerfile installs from the lock; Makefile targets. No app code changes | done |
+| 2 | Settings and logging (`core/`) | `config.py` with pydantic-settings (API keys, model names, timeouts) from `.env`; `.env.example`; `logging.py`; tests | todo |
+| 3 | LLM interface and fake (`llm/base.py`, `llm/fake.py`) | `LLMClient` (`generate`, `generate_structured`), `LLMResponse`, `Usage`; `FakeLLM`; tests. Not used by the app yet | todo |
+| 4 | Real LLM clients (`llm/anthropic.py`, `llm/openai.py`) | Structured output via tool use, Pydantic validation + one retry, timeout, backoff on rate limits, token/latency/cost tracking; tests with a mocked SDK | todo |
+| 5 | Agents on the new base (`agents/`, `models/`) | `BaseAgent` with injected `LLMClient` and `output_schema`; slim `GrammarAgent`/`StyleAgent`; prompts without JSON instructions; tests with `FakeLLM` | todo |
+| 6 | LangGraph graph (`workflows/`) | `ReviewState` with a usage reducer; Prepare draft -> Grammar and Style in parallel -> Merge results; tests running the graph with `FakeLLM` | todo |
+| 7 | API wiring, remove old code (`api/`, `main.py`) | App factory builds settings, LLM client and graph at startup; `POST /review` (same response) and `GET /health`; delete `routes/`, `services/`, `utils/`, old workflow; API tests; manual frontend check | todo |
+| 8 | CI | GitHub Actions: ruff, pyright, pytest on push and PR; pre-commit config; real-API test only when a key is set | todo |
+| 9 | Documentation | README; `architecture/current-state.md`; this file's Outcome; `MAP.md` | todo |
+
+Update the Status column as each commit lands.
+
 ## Decisions
 
 - [ADR 0002](../decisions/0002-tech-stack.md): tech stack.
