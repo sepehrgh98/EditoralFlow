@@ -26,7 +26,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | ADR | Title | Status |
 | --- | --- | --- |
 | [0001](decisions/0001-fact-checking-as-core.md) | Fact-checking is the core of EditoralFlow | accepted |
-| [0002](decisions/0002-tech-stack.md) | Tech stack | accepted |
+| [0002](decisions/0002-tech-stack.md) | Tech stack | accepted (evals row superseded by 0013) |
 | [0003](decisions/0003-langgraph-from-phase-0.md) | LangGraph from Phase 0 | accepted |
 | [0004](decisions/0004-async-llm-calls.md) | Async LLM calls | accepted |
 | [0005](decisions/0005-json-outputs-for-structured-answers.md) | JSON outputs for structured answers | accepted |
@@ -37,6 +37,9 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [0010](decisions/0010-fact-check-subgraph.md) | Fact-check as a subgraph | accepted |
 | [0011](decisions/0011-opt-in-langsmith-tracing.md) | Opt-in LangSmith tracing | superseded by 0012 |
 | [0012](decisions/0012-full-content-langsmith-traces.md) | Full-content LangSmith traces | accepted |
+| [0013](decisions/0013-own-eval-runner-with-langsmith-experiments.md) | Own eval runner with optional LangSmith experiments | accepted |
+| [0014](decisions/0014-step-wise-evaluation.md) | Step-wise evaluation with oracle mode | accepted |
+| [0015](decisions/0015-ci-eval-gate.md) | CI eval gate on retrieval | accepted |
 
 ### Phases
 
@@ -45,6 +48,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
 | 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | done |
 | 1.5 LangSmith tracing | [phase-1.5-langsmith-tracing.md](phases/phase-1.5-langsmith-tracing.md) | done |
+| 2 Evaluation harness | [phase-2-evaluation-harness.md](phases/phase-2-evaluation-harness.md) | agreed, in progress |
 
 ## Status values
 

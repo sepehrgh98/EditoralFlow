@@ -47,7 +47,7 @@ Each tool is added only in the phase that needs it. Recorded in [ADR 0002](../de
 | LLM | Internal `LLMClient` interface; Ollama local models by default for development, Claude (Anthropic SDK) by setting ([ADR 0006](../decisions/0006-local-models-with-ollama.md)); fast tier for extraction/grammar, strong tier for verification | 0–1 |
 | Keyword search | bm25s | 1 |
 | Datasets | Hugging Face `datasets` (SciFact, later FEVER) | 1 |
-| Evals and tracing | Own runner on pytest + Langfuse | 2 |
+| Evals and tracing | Own runner + LangSmith (tracing, optional experiments), see ADR 0013 | 1.5, 2 |
 | Vector store | Qdrant | 3 |
 | Embeddings and reranker | Local open models via sentence-transformers | 3 |
 | Orchestration | LangGraph (graph from Phase 0, Postgres checkpointer from Phase 5) | 0, 5 |

@@ -45,7 +45,9 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 
 - **Goal:** know how good it is, and catch it getting worse.
 - **Scope:** eval runner over the SciFact dev set; verdict accuracy, evidence recall@k, citation correctness and abstention rate; a small hand-labelled set of real-style articles; LLM-as-a-judge for claim extraction; use Phase 1.5 traces to evaluate the trajectory; a CI job on a fixed subset that fails on regression; results table in the README.
+- **Design:** [phases/phase-2-evaluation-harness.md](../phases/phase-2-evaluation-harness.md). Agreed refinements: step-wise scores with an oracle mode; grammar evaluated lightly, style not until Phase 5; CI gates on the free retrieval eval on every push and PR, while LLM evals run locally with results committed in the baseline ([ADR 0015](../decisions/0015-ci-eval-gate.md)).
 - **Done when:** every pull request shows the score change, and a baseline is recorded.
+- **Status:** design agreed (2026-11-27); implementation in progress.
 
 ## Phase 3: Hybrid retrieval and reranking
 
