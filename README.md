@@ -71,13 +71,13 @@ npm install   # first time only
 npm run dev
 ```
 
-**6. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model. Choose **Fact-check** to check the draft against SciFact, then select a highlighted sentence to inspect the verdict and cited evidence.
+**6. Open http://localhost:3000**, paste an article and click **Review**. A review takes about 10 to 30 seconds on the local model. With `REVIEW_INCLUDE_FACT_CHECK=true`, Review also checks the draft against SciFact. Select a highlighted sentence to inspect the verdict and cited evidence.
 
 ### Fact-check an article through the API
 
 Open http://localhost:8000/docs and try `POST /fact-check` with `{"article":"Your draft here."}`. The response includes each claim's verdict, any cited SciFact sentences, and counts by verdict.
 
-If the corpus is missing, `POST /fact-check` returns 503 with setup instructions and grammar and style review remain available. To include fact-checking in `POST /review`, set `REVIEW_INCLUDE_FACT_CHECK=true` and restart. The Review tab then shows highlighted claims and citations alongside grammar and style. With that flag enabled the server requires a loadable corpus at startup.
+If the corpus is missing, `POST /fact-check` returns 503 with setup instructions and grammar and style review remain available. To include fact-checking in `POST /review`, set `REVIEW_INCLUDE_FACT_CHECK=true` and restart. The review then shows highlighted claims and citations alongside grammar and style. With that flag enabled the server requires a loadable corpus at startup.
 
 ### Using Claude instead of the local model
 

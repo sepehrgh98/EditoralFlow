@@ -172,7 +172,7 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 
 Phase 1 implementation completed on 2026-11-27 on `phase-1`. The frontend and `POST /fact-check` check draft claims against SciFact. The default `POST /review` response continues to contain grammar and style results.
 
-The Review tab also uses the shared highlights and evidence panel when `/review` includes `fact_check_result`.
+The frontend now has one Review workflow. It shows highlights and citations alongside grammar and style when `/review` includes `fact_check_result`. Standalone fact-checking is available through `POST /fact-check`.
 
 ### Live verification
 

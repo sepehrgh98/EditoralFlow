@@ -3,11 +3,6 @@
 import { useState } from "react";
 import { FactCheckResults, type FactCheckResult } from "./fact-check";
 
-const modes = [
-  { path: "review", label: "Review", progress: "Reviewing" },
-  { path: "fact-check", label: "Fact-check", progress: "Checking facts" },
-] as const;
-
 type Issue = {
   type: string;
   text: string;
@@ -43,15 +38,10 @@ const agents = [
 ] as const;
 
 export default function Home() {
-  const [mode, setMode] = useState<(typeof modes)[number]>(modes[0]);
-  const isFactCheck = mode.path === "fact-check";
   const [article, setArticle] = useState("");
   const [result, setResult] = useState<ReviewResult | null>(null);
-  const [factCheck, setFactCheck] = useState<FactCheckResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const displayedFactCheck = isFactCheck ? factCheck : result?.fact_check_result;
 
   const wordCount = article
     .trim()
@@ -80,7 +70,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/${mode.path}`,
+        "http://localhost:8000/review",
         {
           method: "POST",
           headers: {
@@ -95,21 +85,13 @@ export default function Home() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (isFactCheck && typeof data.detail === "string") {
-          setError(data.detail);
-          return;
-        }
-        throw new Error(`${mode.label} request failed.`);
+        throw new Error("Review request failed.");
       }
 
-      if (isFactCheck) {
-        setFactCheck(data);
-      } else {
-        setResult(data);
-      }
+      setResult(data);
     } catch (error) {
       console.error(error);
-      setError(`Could not complete the ${mode.label.toLowerCase()}. Check the backend and try again.`);
+      setError("Could not complete the review. Check the backend and try again.");
     } finally {
       setLoading(false);
     }
@@ -130,50 +112,19 @@ export default function Home() {
 
           <div className="flex flex-wrap gap-3 text-sm">
             <Metric label="Words" value={wordCount} />
-            {!isFactCheck && (
-              <>
-                <Metric label="Issues" value={result ? issueCount : "-"} />
-                <Metric label="Score" value={averageScore ?? "-"} />
-              </>
-            )}
+            <Metric label="Issues" value={result ? issueCount : "-"} />
+            <Metric label="Score" value={averageScore ?? "-"} />
           </div>
         </header>
 
-        <nav aria-label="Editorial mode" className="flex gap-2">
-          {modes.map((option) => (
-            <button
-              key={option.path}
-              type="button"
-              aria-pressed={mode === option}
-              disabled={loading}
-              onClick={() => {
-                setMode(option);
-                setError("");
-              }}
-              className="rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-300 hover:bg-white/10 aria-pressed:border-sky-400/50 aria-pressed:bg-sky-400/15 aria-pressed:text-sky-200 disabled:cursor-wait"
-            >
-              {option.label}
-            </button>
-          ))}
-        </nav>
-
-        {displayedFactCheck ? (
+        {result?.fact_check_result ? (
           <section className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
             <FactCheckResults
-              key={mode.path}
               article={article}
-              result={displayedFactCheck}
-              onEdit={() => {
-                if (isFactCheck) {
-                  setFactCheck(null);
-                } else {
-                  setResult(null);
-                }
-              }}
+              result={result.fact_check_result}
+              onEdit={() => setResult(null)}
             >
-              {!isFactCheck && result && (
-                <ReviewResults result={result} issueCount={issueCount} averageScore={averageScore} />
-              )}
+              <ReviewResults result={result} issueCount={issueCount} averageScore={averageScore} />
             </FactCheckResults>
           </section>
         ) : (
@@ -194,7 +145,7 @@ export default function Home() {
                   disabled={!article.trim() || loading}
                   className="inline-flex min-h-11 items-center justify-center rounded-md bg-sky-400 px-5 text-sm font-semibold text-slate-950 transition hover:bg-sky-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                 >
-                  {loading ? mode.progress : mode.label}
+                  {loading ? "Reviewing" : "Review"}
                 </button>
               </div>
 
@@ -206,7 +157,6 @@ export default function Home() {
                 value={article}
                 onChange={(event) => {
                   setArticle(event.target.value);
-                  setFactCheck(null);
                   setResult(null);
                   setError("");
                 }}
@@ -220,17 +170,15 @@ export default function Home() {
                 </div>
               )}
 
-              {(isFactCheck || !result) && !loading && (
+              {!result && !loading && (
                 <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-white/15 bg-[#171a1f] px-8 text-center">
                   <div>
                     <div className="mx-auto mb-5 h-2 w-24 rounded-full bg-gradient-to-r from-sky-300 via-emerald-300 to-amber-300" />
                     <h2 className="text-xl font-semibold text-white">
-                      {isFactCheck ? "Ready to fact-check" : "Ready for review"}
+                      Ready for review
                     </h2>
                     <p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">
-                      {isFactCheck
-                        ? "Check factual claims against the SciFact library."
-                        : "Results will appear here after the grammar and style agents finish."}
+                      Results will appear here when the review finishes.
                     </p>
                   </div>
                 </div>
@@ -241,13 +189,13 @@ export default function Home() {
                   <div className="text-center">
                     <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-zinc-700 border-t-sky-300" />
                     <p className="mt-4 text-sm font-medium text-zinc-300">
-                      {mode.progress}
+                      Reviewing article
                     </p>
                   </div>
                 </div>
               )}
 
-              {!isFactCheck && result && !loading && (
+              {result && !loading && (
                 <ReviewResults result={result} issueCount={issueCount} averageScore={averageScore} />
               )}
             </aside>
