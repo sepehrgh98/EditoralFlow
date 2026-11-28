@@ -1,0 +1,5 @@
+Extract the factual claims from this draft:
+
+<draft>
+{article}
+</draft>

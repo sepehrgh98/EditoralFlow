@@ -2,6 +2,8 @@
 
 from pydantic import BaseModel, Field
 
+from app.models.fact_check import FactCheckResponse
+
 
 class Issue(BaseModel):
     """One problem found in the article."""
@@ -25,3 +27,8 @@ class ReviewResponse(BaseModel):
 
     grammar_result: AgentResult
     style_result: AgentResult
+    # Only when fact-checking is part of the review (ADR 0010); left out of the JSON
+    # entirely otherwise, so the default response is unchanged
+    fact_check_result: FactCheckResponse | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )

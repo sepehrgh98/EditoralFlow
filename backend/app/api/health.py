@@ -1,15 +1,15 @@
-"""GET /health: is the backend up, and which LLM provider does it use."""
+"""GET /health: is the backend up, which LLM provider it uses, and is fact-checking ready."""
 
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
-
-from app.api.deps import get_settings_from_app
-from app.core.config import Settings
+from fastapi import APIRouter, Request
 
 router = APIRouter()
 
 
 @router.get("/health")
-async def health(settings: Annotated[Settings, Depends(get_settings_from_app)]) -> dict[str, str]:
-    return {"status": "ok", "provider": settings.llm_provider}
+async def health(request: Request) -> dict[str, str]:
+    state = request.app.state
+    return {
+        "status": "ok",
+        "provider": state.settings.llm_provider,
+        "fact_check": "ready" if state.fact_check_graph is not None else "unavailable",
+    }

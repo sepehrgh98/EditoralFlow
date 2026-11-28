@@ -4,8 +4,8 @@ import logging
 
 LOG_FORMAT = "%(asctime)s %(levelname)-8s %(name)s: %(message)s"
 
-# Libraries that log every HTTP request at INFO; our own lines already cover each call
-QUIET_LOGGERS = ("httpx", "httpcore")
+# Libraries that log routine steps at INFO; our own lines already cover them
+QUIET_LOGGERS = ("httpx", "httpcore", "bm25s")
 
 
 def setup_logging(level: str = "INFO") -> None:

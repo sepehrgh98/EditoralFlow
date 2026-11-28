@@ -17,7 +17,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [product/roadmap.md](product/roadmap.md) | What gets built in which phase, and when is a phase done? | agreed |
 | [product/concept-priorities.md](product/concept-priorities.md) | Which AI engineering concepts matter, and where does each appear? | agreed |
 | [architecture/target-architecture.md](architecture/target-architecture.md) | What will the finished system look like, and with which stack? | agreed |
-| [architecture/current-state.md](architecture/current-state.md) | What does the code do right now, file by file? | current |
+| [architecture/current-state.md](architecture/current-state.md) | What does the code do now, including the combined Review workflow? | current |
 | [decisions/](decisions/) | Why was each significant choice made? (ADRs, numbered) | ongoing |
 | [phases/](phases/) | Detailed design and outcome of each phase | ongoing |
 
@@ -31,16 +31,21 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [0004](decisions/0004-async-llm-calls.md) | Async LLM calls | accepted |
 | [0005](decisions/0005-json-outputs-for-structured-answers.md) | JSON outputs for structured answers | accepted |
 | [0006](decisions/0006-local-models-with-ollama.md) | Local models with Ollama for development | accepted |
+| [0007](decisions/0007-claims-and-labels.md) | Claims and labels | accepted |
+| [0008](decisions/0008-citations-by-sentence-number.md) | Citations by sentence number | accepted |
+| [0009](decisions/0009-bm25-baseline.md) | BM25 baseline | accepted |
+| [0010](decisions/0010-fact-check-subgraph.md) | Fact-check as a subgraph | accepted |
 
 ### Phases
 
 | Phase | Design | Status |
 | --- | --- | --- |
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
+| 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | done |
 
 ## Status values
 
-`agreed` (decided, change only by a new decision) · `current` (describes the code as it is now) · `accepted` / `proposed` / `superseded` (ADRs) · `ongoing` (folder that grows) · `template` / `guide`.
+`agreed` (decided, change only by a new decision) · `done` (phase complete) · `current` (describes the code as it is now) · `accepted` / `proposed` / `superseded` (ADRs) · `ongoing` (folder that grows) · `template` / `guide`.
 
 ## Rules for keeping documentation current
 

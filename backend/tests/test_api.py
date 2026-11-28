@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.core.config import Settings
 from app.llm.base import LLMError, LLMOutputError
 from app.main import create_app
+from tests.conftest import FIXTURE_CORPUS_PATH
 from tests.fakes import FakeAnswer, FakeCall, FakeLLM
 
 GRAMMAR = {
@@ -24,9 +25,14 @@ async def by_agent(call: FakeCall) -> FakeAnswer:
     return GRAMMAR if "grammar, spelling and punctuation" in call.prompt else STYLE
 
 
-def client_with(llm: FakeLLM) -> TestClient:
-    settings = Settings(_env_file=None)  # type: ignore[call-arg]
-    return TestClient(create_app(settings=settings, llm=llm))
+def make_settings(**overrides: object) -> Settings:
+    """Settings without backend/.env, using the 5-abstract fixture corpus."""
+    values = {"corpus_path": FIXTURE_CORPUS_PATH, **overrides}
+    return Settings(_env_file=None, **values)  # type: ignore[call-arg]
+
+
+def client_with(llm: FakeLLM, **settings: object) -> TestClient:
+    return TestClient(create_app(settings=make_settings(**settings), llm=llm))
 
 
 @pytest.fixture
@@ -39,7 +45,7 @@ def test_health(client: TestClient) -> None:
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "provider": "ollama"}
+    assert response.json() == {"status": "ok", "provider": "ollama", "fact_check": "ready"}
 
 
 def test_review_returns_the_shape_the_frontend_reads(client: TestClient) -> None:
@@ -89,7 +95,5 @@ def test_cors_allows_the_frontend(client: TestClient) -> None:
 
 
 def test_create_app_builds_the_configured_client() -> None:
-    settings = Settings(_env_file=None)  # type: ignore[call-arg]
-
-    with TestClient(create_app(settings=settings)) as client:
+    with TestClient(create_app(settings=make_settings())) as client:
         assert client.get("/health").json()["provider"] == "ollama"

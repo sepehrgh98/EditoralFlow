@@ -7,8 +7,11 @@ from typing import Literal
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 # backend/.env, independent of the directory the app is started from
-ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+ENV_FILE = BACKEND_DIR / ".env"
+# backend/data/scifact/corpus.jsonl, written by `make data`
+DEFAULT_CORPUS_PATH = BACKEND_DIR / "data" / "scifact" / "corpus.jsonl"
 
 # ollama: free, local models (default for development). anthropic: Claude API (paid).
 Provider = Literal["ollama", "anthropic"]
@@ -43,6 +46,14 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=3, ge=0)
     # Models think before answering and that counts toward this limit, so keep it generous
     llm_max_tokens: int = Field(default=16000, gt=0)
+
+    # Fact-checking
+    corpus_path: Path = DEFAULT_CORPUS_PATH
+    fact_check_top_k: int = Field(default=3, gt=0)  # abstracts searched per claim
+    fact_check_max_claims: int = Field(default=20, gt=0)  # claims checked per draft
+    fact_check_max_concurrency: int = Field(default=4, gt=0)  # claims checked at once
+    # Also fact-check inside POST /review (ADR 0010); off because it makes many model calls
+    review_include_fact_check: bool = False
 
     # App
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"

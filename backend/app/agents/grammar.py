@@ -1,7 +1,7 @@
-from app.agents.base import BaseAgent
+from app.agents.base import ReviewAgent
 
 
-class GrammarAgent(BaseAgent):
+class GrammarAgent(ReviewAgent):
     """Checks grammar, spelling and punctuation."""
 
     name = "grammar"

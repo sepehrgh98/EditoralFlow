@@ -1,4 +1,4 @@
-.PHONY: start stop restart rebuild logs ps dev install hooks lint format typecheck test test-live check
+.PHONY: start stop restart rebuild logs ps dev data install hooks lint format typecheck test test-live check
 
 # --- Docker ---
 start:
@@ -23,6 +23,10 @@ ps:
 # Run the backend without Docker, reloading on code changes
 dev:
 	uv run uvicorn --factory app.main:create_app --reload --port 8000
+
+# Download the SciFact corpus once into data/ (gitignored)
+data:
+	uv run python -m scripts.download_scifact
 
 install:
 	uv sync

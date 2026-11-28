@@ -27,5 +27,8 @@ out/
 # VS Code
 .vscode/
 
+# Downloaded datasets (make data)
+backend/data/
+
 # Logs
 *.log

@@ -28,9 +28,11 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 ## Phase 1: Fact-check MVP
 
 - **Goal:** the smallest version that checks facts end to end.
-- **Scope:** SciFact abstracts as the corpus; BM25 keyword search only; a claim extractor; a verifier returning *supported*, *contradicted* or *can't tell* with a quoted passage; `POST /fact-check`; frontend highlights claims and shows evidence on click.
+- **Scope:** SciFact abstracts as the corpus; BM25 keyword search only; a claim extractor; a verifier returning *supported*, *contradicted* or *can't tell* citing source sentences; the fact-check subgraph, alone via `POST /fact-check` and optionally inside the review graph; frontend highlights claims and shows evidence on click.
+- **Design:** [phases/phase-1-fact-check-mvp.md](../phases/phase-1-fact-check-mvp.md)
 - **Out of scope:** vector search, retries, orchestration, the queue.
 - **Done when:** you paste a paragraph and see coloured claims with real citations.
+- **Status:** implementation complete (2026-11-27). The live browser check confirmed highlights, exact SciFact quotations and an abstention without citations. See the design file's Outcome.
 
 ## Phase 2: Evaluation harness
 
@@ -88,9 +90,9 @@ Answered in the design discussion of the phase where they matter; each answer be
 
 | Question | Decided in |
 | --- | --- |
-| Domain: science/health (SciFact) or another? | Phase 1 |
-| Claim granularity: per sentence or atomic facts? | Phase 1 |
-| Verdict labels: three, or add "partly supported"? | Phase 1 |
+| ~~Domain: science/health (SciFact) or another?~~ SciFact ([ADR 0007](../decisions/0007-claims-and-labels.md)) | decided |
+| ~~Claim granularity: per sentence or atomic facts?~~ Atomic ([ADR 0007](../decisions/0007-claims-and-labels.md)) | decided |
+| ~~Verdict labels: three, or add "partly supported"?~~ Three ([ADR 0007](../decisions/0007-claims-and-labels.md)) | decided |
 | LLM choice for extraction vs. verification, monthly API budget | Phase 0–1 |
 | Embeddings and reranker: hosted or local open model? | Phase 3 |
 | ~~Orchestration: LangGraph or hand-written state machine?~~ LangGraph from Phase 0 ([ADR 0003](../decisions/0003-langgraph-from-phase-0.md)) | decided |
