@@ -39,7 +39,7 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 - **Goal:** inspect a Review run from claim extraction through retrieval and verification.
 - **Scope:** opt-in graph tracing, BM25 and model call spans, and a verified debugging workflow using a public SciFact sample.
 - **Design:** [phases/phase-1.5-langsmith-tracing.md](../phases/phase-1.5-langsmith-tracing.md)
-- **Status:** complete (2026-11-27). Verified a masked live SciFact Review trace in hosted LangSmith.
+- **Status:** complete (2026-11-27). Verified live Review traces in hosted LangSmith: first masked, then with full inputs and outputs after [ADR 0012](../decisions/0012-full-content-langsmith-traces.md).
 
 ## Phase 2: Evaluation harness
 

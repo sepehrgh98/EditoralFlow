@@ -42,3 +42,5 @@ A follow-up added a [public SciFact trace command](../../README.md#inspect-full-
 ## Later change
 
 On 2026-11-27 the masking described above was removed: app traces now send full inputs, outputs and error messages ([ADR 0012](../decisions/0012-full-content-langsmith-traces.md), superseding ADR 0011's masking). The verification notes above record what was true at the time.
+
+Verified live the same day: after restarting the traced backend, a Review of a public-style science draft in `editoralflow-local` showed full Input and Output on every step: the extraction prompt and claims, the search query with ranked abstracts, the verifier prompt with numbered source sentences and its answer, and the grammar and style prompts and answers. `make check` passed all 165 tests.
