@@ -9,7 +9,7 @@ updated: 2026-11-27
 
 Snapshot after Phase 1. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
 
-With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The local setup uses LangSmith's input and output masking controls. Custom retrieval and model spans are planned in Phase 1.5.
+With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The backend masks inputs, outputs and error details and keeps only selected span metadata. Search, verification and structured model calls add child spans under the graph nodes.
 
 ## What it does
 
@@ -37,6 +37,7 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/api/health.py` | `GET /health`: status, LLM provider and fact-check readiness |
 | `backend/app/api/deps.py` | Reads settings and graphs from app state; returns 503 when fact-checking is unavailable |
 | `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider (`ollama` default, or `anthropic`), Ollama host/models/context/thinking, Anthropic key and models, LLM timeout/retries/max tokens, corpus path, fact-check limits, review fact-check flag, log level and CORS. Fails clearly if Anthropic is chosen without a key |
+| `backend/app/core/tracing.py` | Configures an opt-in LangSmith client for both graph entry points and filters trace data |
 | `backend/app/core/logging.py` | `setup_logging(level)`: one log format; quiets routine logs from `httpx` and `bm25s` |
 | `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()` |
 | `backend/app/llm/ollama.py` | `OllamaClient`: local models (default `qwen3:8b` / `qwen3:14b`), JSON-schema `format`, one retry on an invalid answer, clear errors when Ollama is down or a model is missing |

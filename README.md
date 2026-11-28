@@ -105,20 +105,17 @@ All settings are listed with defaults in [`backend/.env.example`](backend/.env.e
 
 ## Inspect a Review in LangSmith
 
-Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. The masking options hide graph inputs, outputs and metadata from the hosted trace.
+Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. The backend masks raw graph inputs and outputs and sends only selected trace metadata.
 
 ```zsh
 read -rs 'LANGSMITH_API_KEY?LangSmith API key: '
 export LANGSMITH_API_KEY
 export LANGSMITH_PROJECT='your-local-tracer-session-name'
 export LANGSMITH_TRACING=true
-export LANGSMITH_HIDE_INPUTS=true
-export LANGSMITH_HIDE_OUTPUTS=true
-export LANGSMITH_HIDE_METADATA=true
 REVIEW_INCLUDE_FACT_CHECK=true make dev
 ```
 
-For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
+For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. In each claim branch, **Search evidence** shows retrieved document IDs and BM25 scores. **Verify claim** shows the verdict and citation IDs. **Generate structured answer** shows the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
 
 ## Testing
 
