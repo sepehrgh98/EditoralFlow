@@ -8,6 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from app.agents.grammar import GrammarAgent
 from app.agents.style import StyleAgent
+from app.core.tracing import graph_tracing
 from app.llm.base import LLMClient, Usage
 from app.models.review import ReviewResponse
 from app.workflows.fact_check_graph import (
@@ -100,5 +101,8 @@ def build_review_graph(
 
 async def run_review(graph: ReviewGraph, article: str) -> tuple[ReviewResponse, list[Usage]]:
     """Run one review. Returns the response and the usage of every LLM call."""
-    final = await graph.ainvoke({"article": article})
+    with graph_tracing():
+        final = await graph.ainvoke(
+            {"article": article}, config={"run_name": "EditoralFlow Review"}
+        )
     return final["response"], final["usage"]

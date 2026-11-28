@@ -103,6 +103,44 @@ All settings are listed with defaults in [`backend/.env.example`](backend/.env.e
 | `LLM_TIMEOUT_SECONDS` | `120` | Give up on one model call after this long |
 | `LOG_LEVEL` | `INFO` | `DEBUG` shows more detail |
 
+## Inspect a Review in LangSmith
+
+Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. With tracing on, every trace includes full inputs and outputs (draft text, prompts, retrieved abstracts, model answers) and real error messages, so only trace drafts that may be stored on LangSmith's hosted service ([ADR 0012](documentation/decisions/0012-full-content-langsmith-traces.md)).
+
+```zsh
+read -rs 'LANGSMITH_API_KEY?LangSmith API key: '
+export LANGSMITH_API_KEY
+export LANGSMITH_PROJECT='editoralflow-local'
+export LANGSMITH_TRACING=true
+REVIEW_INCLUDE_FACT_CHECK=true make dev
+```
+
+If your key is already stored in the ignored `backend/.env`, run `uv run --env-file .env make dev` from `backend/` after exporting the project name and enabling tracing and review fact-checking.
+
+For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. Each step's **Input** and **Output** tabs show what it received and returned. In each claim branch, **Search evidence** shows the query and the ranked abstracts with their BM25 scores. **Verify claim** shows the claim and the verdict with its citations. **Generate structured answer** shows the exact system and user prompts, the model's validated answer, the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
+
+### Inspect full inputs and outputs for a public SciFact claim
+
+From `backend/`, run this with your key already in the ignored `.env`:
+
+```bash
+uv run --env-file .env python -m scripts.trace_scifact 130
+```
+
+Open **Public SciFact claim 130** in the **EditoralFlow → Local → Tracing** view. Use **Input** and **Output** on `extract_claims` to see the public draft and extracted claim. Open **Search evidence** for the ranked abstracts and **Verify claim** for the verdict. Its **Generate structured answer** child shows the exact model prompt and its validated answer. The command accepts a SciFact development claim ID and always uses the local SciFact dataset. Normal app reviews show the same full inputs and outputs; this command is a shortcut for tracing a dataset claim by ID.
+
+### Diagnose a verdict
+
+For a reproducible smoke test, submit this public SciFact development claim (ID 130):
+
+> Articles published in open access format are more likely to be cited than traditional journals.
+
+1. Open **EditoralFlow Review** and expand **Fact-check**. Select the **Search evidence** span for claim `c1` and look at `retrieved_documents`. The supporting paper in SciFact has document ID `27768226`.
+2. If the expected paper is absent, investigate retrieval first. If it is present, compare the cited sentence indices and verdict against the actual abstract in `backend/data/scifact/corpus.jsonl`. A verifier error is a plausible diagnosis when the retrieved evidence settles the claim and the verdict disagrees with it.
+3. Expand **Verify claim** and its **Generate structured answer** span. Compare `verdict` and `citation_ids` with the Review response and use `model` and `latency_ms` to identify which model call ran and how long it took. Graph inputs and outputs should be empty.
+
+The latest local smoke test retrieved document `27768226` at rank 1 and returned Supported with citations to zero-based sentence indices 2, 10 and 11. Model responses and timings can vary between runs.
+
 ## Testing
 
 | Command | What it does | Cost |

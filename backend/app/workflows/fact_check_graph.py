@@ -12,9 +12,11 @@ from collections import Counter
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Send
+from langsmith import trace
 
 from app.agents.claim_extractor import DEFAULT_MAX_CLAIMS, ClaimExtractor
 from app.agents.verifier import Verifier
+from app.core.tracing import graph_tracing
 from app.llm.base import LLMClient, Usage
 from app.models.fact_check import ClaimResult, FactCheckResponse
 from app.retrieval.base import Retriever
@@ -50,11 +52,44 @@ def build_fact_check_graph(
 
     # --- one claim: retrieve -> verify ---
     async def retrieve(state: ClaimState) -> ClaimUpdate:
-        return {"passages": await retriever.search(state["claim"].text, k=top_k)}
+        claim = state["claim"]
+        with trace(
+            "Search evidence",
+            run_type="retriever",
+            metadata={"claim_id": claim.id},
+            inputs={"query": claim.text, "top_k": top_k},
+        ) as run:
+            passages = await retriever.search(claim.text, k=top_k)
+            run.add_outputs({"passages": [passage.model_dump(mode="json") for passage in passages]})
+            run.add_metadata(
+                {
+                    "retrieved_documents": [
+                        {"doc_id": passage.document.doc_id, "score": passage.score}
+                        for passage in passages
+                    ],
+                }
+            )
+        return {"passages": passages}
 
     async def verify(state: ClaimState) -> ClaimUpdate:
         passages = state["passages"]
-        checked = await verifier.verify(state["claim"], passages)
+        claim = state["claim"]
+        with trace(
+            "Verify claim",
+            metadata={"claim_id": claim.id},
+            inputs={"claim": claim.model_dump(mode="json")},
+        ) as run:
+            checked = await verifier.verify(claim, passages)
+            run.add_outputs(checked.verdict.model_dump(mode="json"))
+            run.add_metadata(
+                {
+                    "verdict": checked.verdict.label,
+                    "citation_ids": [
+                        {"doc_id": citation.doc_id, "sentence_index": citation.sentence_index}
+                        for citation in checked.verdict.citations
+                    ],
+                }
+            )
         result = ClaimResult(
             claim=state["claim"],
             verdict=checked.verdict,
@@ -117,5 +152,8 @@ async def run_fact_check(
     graph: FactCheckGraph, article: str, *, max_concurrency: int = DEFAULT_MAX_CONCURRENCY
 ) -> tuple[FactCheckResponse, list[Usage]]:
     """Run one fact-check. Returns the response and the usage of every LLM call."""
-    final = await graph.ainvoke({"article": article}, config={"max_concurrency": max_concurrency})
+    with graph_tracing():
+        final = await graph.ainvoke(
+            {"article": article}, config={"max_concurrency": max_concurrency}
+        )
     return final["response"], final.get("usage", [])

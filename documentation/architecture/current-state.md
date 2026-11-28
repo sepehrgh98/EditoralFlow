@@ -7,7 +7,11 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot after Phase 1. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
+Snapshot after Phase 1.5. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
+
+With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. Traces include full inputs, outputs and error messages (ADR 0012), plus span metadata such as claim ID, retrieved documents, model, latency, verdict and citation IDs. Search, verification and structured model calls add child spans under the graph nodes.
+
+The public SciFact trace command in `backend/scripts/trace_scifact.py` runs a dataset claim by ID and records full inputs and outputs for that run.
 
 ## What it does
 
@@ -35,6 +39,7 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/app/api/health.py` | `GET /health`: status, LLM provider and fact-check readiness |
 | `backend/app/api/deps.py` | Reads settings and graphs from app state; returns 503 when fact-checking is unavailable |
 | `backend/app/core/config.py` | `Settings` (pydantic-settings) from env and `backend/.env`: provider (`ollama` default, or `anthropic`), Ollama host/models/context/thinking, Anthropic key and models, LLM timeout/retries/max tokens, corpus path, fact-check limits, review fact-check flag, log level and CORS. Fails clearly if Anthropic is chosen without a key |
+| `backend/app/core/tracing.py` | Configures an opt-in LangSmith client for both graph entry points and filters trace data |
 | `backend/app/core/logging.py` | `setup_logging(level)`: one log format; quiets routine logs from `httpx` and `bm25s` |
 | `backend/app/llm/base.py` | `LLMClient` async interface (`generate`, `generate_structured`, tier `fast`/`strong`), `LLMResponse`, `Usage`, `LLMError`, `LLMOutputError`, `log_usage()` |
 | `backend/app/llm/ollama.py` | `OllamaClient`: local models (default `qwen3:8b` / `qwen3:14b`), JSON-schema `format`, one retry on an invalid answer, clear errors when Ollama is down or a model is missing |
@@ -66,7 +71,6 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/tests/test_live.py` | Live tests against the model in settings; marker `live`, skipped unless `make test-live` |
 | `frontend/src/app/page.tsx` | Sends the draft to the review API and displays scores, issues and optional fact-check evidence |
 | `frontend/src/app/fact-check.tsx` | Matches claim source sentences against the draft, highlights verdicts and shows evidence for matched and unmatched claims |
-| `Expert.docx` | Original 10-phase plan |
 
 ## Known weaknesses
 

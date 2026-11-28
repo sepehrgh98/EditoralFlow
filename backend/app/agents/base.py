@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 from typing import ClassVar
 
+from langsmith import trace
 from pydantic import BaseModel
 
 from app.llm.base import LLMClient, LLMResponse, ModelTier
@@ -59,12 +60,21 @@ class BaseAgent[R: BaseModel]:
 
     async def run(self, **values: str) -> LLMResponse[R]:
         """Fill the slots and ask the LLM. Returns the answer and the usage of the call."""
-        return await self._llm.generate_structured(
-            self.build_user_prompt(**values),
-            self.output_schema,
-            system=self.system_prompt,
-            tier=self.tier,
-        )
+        prompt = self.build_user_prompt(**values)
+        with trace(
+            "Generate structured answer",
+            run_type="llm",
+            inputs={"system": self.system_prompt, "prompt": prompt},
+        ) as run:
+            result = await self._llm.generate_structured(
+                prompt,
+                self.output_schema,
+                system=self.system_prompt,
+                tier=self.tier,
+            )
+            run.add_metadata({"model": result.usage.model, "latency_ms": result.usage.latency_ms})
+            run.add_outputs(result.content.model_dump(mode="json"))
+        return result
 
 
 class ReviewAgent(BaseAgent[AgentResult]):
