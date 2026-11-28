@@ -103,6 +103,23 @@ All settings are listed with defaults in [`backend/.env.example`](backend/.env.e
 | `LLM_TIMEOUT_SECONDS` | `120` | Give up on one model call after this long |
 | `LOG_LEVEL` | `INFO` | `DEBUG` shows more detail |
 
+## Inspect a Review in LangSmith
+
+Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. The masking options hide graph inputs, outputs and metadata from the hosted trace.
+
+```zsh
+read -rs 'LANGSMITH_API_KEY?LangSmith API key: '
+export LANGSMITH_API_KEY
+export LANGSMITH_PROJECT='your-local-tracer-session-name'
+export LANGSMITH_TRACING=true
+export LANGSMITH_HIDE_INPUTS=true
+export LANGSMITH_HIDE_OUTPUTS=true
+export LANGSMITH_HIDE_METADATA=true
+REVIEW_INCLUDE_FACT_CHECK=true make dev
+```
+
+For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
+
 ## Testing
 
 | Command | What it does | Cost |

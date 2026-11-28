@@ -9,6 +9,8 @@ updated: 2026-11-27
 
 Snapshot after Phase 1. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
 
+With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The local setup uses LangSmith's input and output masking controls. Custom retrieval and model spans are planned in Phase 1.5.
+
 ## What it does
 
 Paste an article in the frontend; a grammar agent and a style agent review it in parallel and each return a score from 0 to 100, a list of issues and a summary. By default the agents run on a local model through Ollama (free); Claude can be used by setting `LLM_PROVIDER=anthropic`.

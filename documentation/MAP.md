@@ -35,6 +35,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [0008](decisions/0008-citations-by-sentence-number.md) | Citations by sentence number | accepted |
 | [0009](decisions/0009-bm25-baseline.md) | BM25 baseline | accepted |
 | [0010](decisions/0010-fact-check-subgraph.md) | Fact-check as a subgraph | accepted |
+| [0011](decisions/0011-opt-in-langsmith-tracing.md) | Opt-in LangSmith tracing | accepted |
 
 ### Phases
 
@@ -42,6 +43,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | --- | --- | --- |
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
 | 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | done |
+| 1.5 LangSmith tracing | [phase-1.5-langsmith-tracing.md](phases/phase-1.5-langsmith-tracing.md) | agreed, in progress |
 
 ## Status values
 

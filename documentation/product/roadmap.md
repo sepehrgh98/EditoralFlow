@@ -34,10 +34,17 @@ The MVP ends at Phase 2. Each later stage starts only when the previous one pass
 - **Done when:** you paste a paragraph and see coloured claims with real citations.
 - **Status:** implementation complete (2026-11-27). The live browser check confirmed highlights, exact SciFact quotations and an abstention without citations. See the design file's Outcome.
 
+## Phase 1.5: LangSmith tracing
+
+- **Goal:** inspect a Review run from claim extraction through retrieval and verification.
+- **Scope:** opt-in graph tracing, BM25 and model call spans, and a verified debugging workflow using a public SciFact sample.
+- **Design:** [phases/phase-1.5-langsmith-tracing.md](../phases/phase-1.5-langsmith-tracing.md)
+- **Status:** agreed, in progress.
+
 ## Phase 2: Evaluation harness
 
 - **Goal:** know how good it is, and catch it getting worse.
-- **Scope:** eval runner over the SciFact dev set; verdict accuracy, evidence recall@k, citation correctness and abstention rate; a small hand-labelled set of real-style articles; LLM-as-a-judge for claim extraction; per-step traces to evaluate the trajectory; a CI job on a fixed subset that fails on regression; results table in the README.
+- **Scope:** eval runner over the SciFact dev set; verdict accuracy, evidence recall@k, citation correctness and abstention rate; a small hand-labelled set of real-style articles; LLM-as-a-judge for claim extraction; use Phase 1.5 traces to evaluate the trajectory; a CI job on a fixed subset that fails on regression; results table in the README.
 - **Done when:** every pull request shows the score change, and a baseline is recorded.
 
 ## Phase 3: Hybrid retrieval and reranking

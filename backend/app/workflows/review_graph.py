@@ -100,5 +100,5 @@ def build_review_graph(
 
 async def run_review(graph: ReviewGraph, article: str) -> tuple[ReviewResponse, list[Usage]]:
     """Run one review. Returns the response and the usage of every LLM call."""
-    final = await graph.ainvoke({"article": article})
+    final = await graph.ainvoke({"article": article}, config={"run_name": "EditoralFlow Review"})
     return final["response"], final["usage"]
