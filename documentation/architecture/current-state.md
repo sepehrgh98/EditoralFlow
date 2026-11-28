@@ -71,7 +71,6 @@ Paste an article in the frontend; a grammar agent and a style agent review it in
 | `backend/tests/test_live.py` | Live tests against the model in settings; marker `live`, skipped unless `make test-live` |
 | `frontend/src/app/page.tsx` | Sends the draft to the review API and displays scores, issues and optional fact-check evidence |
 | `frontend/src/app/fact-check.tsx` | Matches claim source sentences against the draft, highlights verdicts and shows evidence for matched and unmatched claims |
-| `Expert.docx` | Original 10-phase plan |
 
 ## Known weaknesses
 
