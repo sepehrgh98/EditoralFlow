@@ -43,7 +43,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | --- | --- | --- |
 | 0 Clean foundation | [phase-0-foundation.md](phases/phase-0-foundation.md) | done |
 | 1 Fact-check MVP | [phase-1-fact-check-mvp.md](phases/phase-1-fact-check-mvp.md) | done |
-| 1.5 LangSmith tracing | [phase-1.5-langsmith-tracing.md](phases/phase-1.5-langsmith-tracing.md) | agreed, in progress (2 of 3 commits) |
+| 1.5 LangSmith tracing | [phase-1.5-langsmith-tracing.md](phases/phase-1.5-langsmith-tracing.md) | done |
 
 ## Status values
 

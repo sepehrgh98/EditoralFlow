@@ -110,12 +110,26 @@ Create an EditoralFlow agent in LangSmith and obtain its local environment’s t
 ```zsh
 read -rs 'LANGSMITH_API_KEY?LangSmith API key: '
 export LANGSMITH_API_KEY
-export LANGSMITH_PROJECT='your-local-tracer-session-name'
+export LANGSMITH_PROJECT='editoralflow-local'
 export LANGSMITH_TRACING=true
 REVIEW_INCLUDE_FACT_CHECK=true make dev
 ```
 
+If your key is already stored in the ignored `backend/.env`, run `uv run --env-file .env make dev` from `backend/` after exporting the project name and enabling tracing and review fact-checking.
+
 For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. In each claim branch, **Search evidence** shows retrieved document IDs and BM25 scores. **Verify claim** shows the verdict and citation IDs. **Generate structured answer** shows the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
+
+### Diagnose a verdict
+
+For a reproducible smoke test, submit this public SciFact development claim (ID 130):
+
+> Articles published in open access format are more likely to be cited than traditional journals.
+
+1. Open **EditoralFlow Review** and expand **Fact-check**. Select the **Search evidence** span for claim `c1` and look at `retrieved_documents`. The supporting paper in SciFact has document ID `27768226`.
+2. If the expected paper is absent, investigate retrieval first. If it is present, compare the cited sentence indices and verdict against the actual abstract in `backend/data/scifact/corpus.jsonl`. A verifier error is a plausible diagnosis when the retrieved evidence settles the claim and the verdict disagrees with it.
+3. Expand **Verify claim** and its **Generate structured answer** span. Compare `verdict` and `citation_ids` with the Review response and use `model` and `latency_ms` to identify which model call ran and how long it took. Graph inputs and outputs should be empty.
+
+The latest local smoke test retrieved document `27768226` at rank 1 and returned Supported with citations to zero-based sentence indices 2, 10 and 11. Model responses and timings can vary between runs.
 
 ## Testing
 

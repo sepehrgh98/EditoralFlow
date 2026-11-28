@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot after Phase 1. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
+Snapshot after Phase 1.5. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
 
 With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The backend masks inputs, outputs and error details and keeps only selected span metadata. Search, verification and structured model calls add child spans under the graph nodes.
 
