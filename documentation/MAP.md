@@ -35,7 +35,8 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [0008](decisions/0008-citations-by-sentence-number.md) | Citations by sentence number | accepted |
 | [0009](decisions/0009-bm25-baseline.md) | BM25 baseline | accepted |
 | [0010](decisions/0010-fact-check-subgraph.md) | Fact-check as a subgraph | accepted |
-| [0011](decisions/0011-opt-in-langsmith-tracing.md) | Opt-in LangSmith tracing | accepted |
+| [0011](decisions/0011-opt-in-langsmith-tracing.md) | Opt-in LangSmith tracing | superseded by 0012 |
+| [0012](decisions/0012-full-content-langsmith-traces.md) | Full-content LangSmith traces | accepted |
 
 ### Phases
 

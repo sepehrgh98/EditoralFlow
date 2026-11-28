@@ -1,13 +1,13 @@
 ---
 title: Opt-in LangSmith tracing
 summary: Use LangSmith to inspect Review runs, with raw graph data hidden in the local tracing setup.
-status: accepted
+status: superseded
 updated: 2026-11-27
 ---
 
 # ADR 0011 · Opt-in LangSmith tracing
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR 0012](0012-full-content-langsmith-traces.md) (traces are no longer masked)
 - **Date:** 2026-11-27
 
 ## Context

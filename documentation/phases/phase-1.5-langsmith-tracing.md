@@ -38,3 +38,7 @@ The [debugging walkthrough](../../README.md#diagnose-a-verdict) uses SciFact dev
 The evaluation runner, baseline metrics, labelled articles and CI gate remain in [the Phase 2 roadmap](../product/roadmap.md). Their implementation plan is pending design.
 
 A follow-up added a [public SciFact trace command](../../README.md#inspect-full-inputs-and-outputs-for-a-public-scifact-claim) for inspecting full prompts, retrieved abstracts and structured model answers. It loads a development claim by ID and runs outside the HTTP workflows.
+
+## Later change
+
+On 2026-11-27 the masking described above was removed: app traces now send full inputs, outputs and error messages ([ADR 0012](../decisions/0012-full-content-langsmith-traces.md), superseding ADR 0011's masking). The verification notes above record what was true at the time.

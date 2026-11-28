@@ -9,7 +9,7 @@ updated: 2026-11-27
 
 Snapshot after Phase 1.5. The frontend offers one Review workflow for grammar and style. When fact-checking is enabled in review, it also displays highlighted draft sentences and citations. The API exposes standalone fact-checking through `POST /fact-check`.
 
-With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The backend masks inputs, outputs and error details and keeps only selected span metadata. Search, verification and structured model calls add child spans under the graph nodes.
+With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. Traces include full inputs, outputs and error messages (ADR 0012), plus span metadata such as claim ID, retrieved documents, model, latency, verdict and citation IDs. Search, verification and structured model calls add child spans under the graph nodes.
 
 The public SciFact trace command in `backend/scripts/trace_scifact.py` runs a dataset claim by ID and records full inputs and outputs for that run.
 

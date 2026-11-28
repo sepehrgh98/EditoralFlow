@@ -105,7 +105,7 @@ All settings are listed with defaults in [`backend/.env.example`](backend/.env.e
 
 ## Inspect a Review in LangSmith
 
-Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. The backend masks raw graph inputs and outputs and sends only selected trace metadata.
+Create an EditoralFlow agent in LangSmith and obtain its local environment’s tracing project name and an API key. Stop the existing local backend before launching the traced instance. Set the following in the terminal that starts the backend. With tracing on, every trace includes full inputs and outputs (draft text, prompts, retrieved abstracts, model answers) and real error messages, so only trace drafts that may be stored on LangSmith's hosted service ([ADR 0012](documentation/decisions/0012-full-content-langsmith-traces.md)).
 
 ```zsh
 read -rs 'LANGSMITH_API_KEY?LangSmith API key: '
@@ -117,7 +117,7 @@ REVIEW_INCLUDE_FACT_CHECK=true make dev
 
 If your key is already stored in the ignored `backend/.env`, run `uv run --env-file .env make dev` from `backend/` after exporting the project name and enabling tracing and review fact-checking.
 
-For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. In each claim branch, **Search evidence** shows retrieved document IDs and BM25 scores. **Verify claim** shows the verdict and citation IDs. **Generate structured answer** shows the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
+For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. Each step's **Input** and **Output** tabs show what it received and returned. In each claim branch, **Search evidence** shows the query and the ranked abstracts with their BM25 scores. **Verify claim** shows the claim and the verdict with its citations. **Generate structured answer** shows the exact system and user prompts, the model's validated answer, the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
 
 ### Inspect full inputs and outputs for a public SciFact claim
 
@@ -127,7 +127,7 @@ From `backend/`, run this with your key already in the ignored `.env`:
 uv run --env-file .env python -m scripts.trace_scifact 130
 ```
 
-Open **Public SciFact claim 130** in the **EditoralFlow → Local → Tracing** view. Use **Input** and **Output** on `extract_claims` to see the public draft and extracted claim. Open **Search evidence** for the ranked abstracts and **Verify claim** for the verdict. Its **Generate structured answer** child shows the exact model prompt and its validated answer. The command accepts a SciFact development claim ID and always uses the local SciFact dataset. Normal API reviews continue to mask raw inputs and outputs.
+Open **Public SciFact claim 130** in the **EditoralFlow → Local → Tracing** view. Use **Input** and **Output** on `extract_claims` to see the public draft and extracted claim. Open **Search evidence** for the ranked abstracts and **Verify claim** for the verdict. Its **Generate structured answer** child shows the exact model prompt and its validated answer. The command accepts a SciFact development claim ID and always uses the local SciFact dataset. Normal app reviews show the same full inputs and outputs; this command is a shortcut for tracing a dataset claim by ID.
 
 ### Diagnose a verdict
 
