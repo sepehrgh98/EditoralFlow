@@ -24,6 +24,7 @@ type AgentResult = {
 type ReviewResult = {
   grammar_result?: AgentResult;
   style_result?: AgentResult;
+  fact_check_result?: FactCheckResult;
 };
 
 const agents = [
@@ -49,6 +50,8 @@ export default function Home() {
   const [factCheck, setFactCheck] = useState<FactCheckResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const displayedFactCheck = isFactCheck ? factCheck : result?.fact_check_result;
 
   const wordCount = article
     .trim()
@@ -154,9 +157,24 @@ export default function Home() {
           ))}
         </nav>
 
-        {isFactCheck && factCheck ? (
+        {displayedFactCheck ? (
           <section className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-            <FactCheckResults article={article} result={factCheck} onEdit={() => setFactCheck(null)} />
+            <FactCheckResults
+              key={mode.path}
+              article={article}
+              result={displayedFactCheck}
+              onEdit={() => {
+                if (isFactCheck) {
+                  setFactCheck(null);
+                } else {
+                  setResult(null);
+                }
+              }}
+            >
+              {!isFactCheck && result && (
+                <ReviewResults result={result} issueCount={issueCount} averageScore={averageScore} />
+              )}
+            </FactCheckResults>
           </section>
         ) : (
           <section className="grid flex-1 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
@@ -230,106 +248,120 @@ export default function Home() {
               )}
 
               {!isFactCheck && result && !loading && (
-                <>
-                  <div className="rounded-lg border border-white/10 bg-[#171a1f] p-5">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-semibold text-white">
-                          Review summary
-                        </h2>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          {issueCount} total issues found
-                        </p>
-                      </div>
-
-                      <div className="rounded-md border border-white/10 bg-black/20 px-4 py-3 text-center">
-                        <p className="text-2xl font-semibold text-white">
-                          {averageScore}
-                        </p>
-                        <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
-                          Avg score
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {agents.map((agent) => {
-                    const agentResult = result[agent.key];
-
-                    return (
-                      <section
-                        key={agent.key}
-                        className={`rounded-lg border border-white/10 bg-[#171a1f] p-5 ring-1 ${agent.ring}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className={`text-lg font-semibold ${agent.accent}`}>
-                              {agent.label}
-                            </h3>
-                            <p className="mt-2 text-sm leading-6 text-zinc-300">
-                              {agentResult?.summary || "No summary returned."}
-                            </p>
-                          </div>
-
-                          <div className="rounded-md bg-black/25 px-3 py-2 text-right">
-                            <p className="text-xl font-semibold text-white">
-                              {agentResult?.score ?? "-"}
-                            </p>
-                            <p className="text-xs text-zinc-500">
-                              score
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-5 space-y-3">
-                          {(agentResult?.issues.length ?? 0) === 0 && (
-                            <p className="rounded-md border border-white/10 bg-black/15 px-3 py-3 text-sm text-zinc-400">
-                              No issues reported.
-                            </p>
-                          )}
-
-                          {agentResult?.issues.map((issue, index) => (
-                            <article
-                              key={`${agent.key}-${index}`}
-                              className="rounded-md border border-white/10 bg-black/15 p-4"
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="rounded-sm bg-white/10 px-2 py-1 text-xs font-medium uppercase tracking-[0.12em] text-zinc-300">
-                                  {issue.type}
-                                </span>
-                                <span className="text-xs text-zinc-500">
-                                  #{index + 1}
-                                </span>
-                              </div>
-
-                              {issue.text && (
-                                <p className="mt-3 border-l-2 border-amber-300/70 pl-3 text-sm text-zinc-200">
-                                  {issue.text}
-                                </p>
-                              )}
-
-                              <p className="mt-3 text-sm leading-6 text-zinc-300">
-                                {issue.issue}
-                              </p>
-
-                              {issue.suggestion && (
-                                <p className="mt-2 text-sm leading-6 text-emerald-200">
-                                  {issue.suggestion}
-                                </p>
-                              )}
-                            </article>
-                          ))}
-                        </div>
-                      </section>
-                    );
-                  })}
-                </>
+                <ReviewResults result={result} issueCount={issueCount} averageScore={averageScore} />
               )}
             </aside>
           </section>
         )}
       </div>
     </main>
+  );
+}
+
+function ReviewResults({
+  result,
+  issueCount,
+  averageScore,
+}: {
+  result: ReviewResult;
+  issueCount: number;
+  averageScore: number | null;
+}) {
+  return (
+    <>
+      <div className="rounded-lg border border-white/10 bg-[#171a1f] p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">
+              Review summary
+            </h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              {issueCount} total issues found
+            </p>
+          </div>
+
+          <div className="rounded-md border border-white/10 bg-black/20 px-4 py-3 text-center">
+            <p className="text-2xl font-semibold text-white">
+              {averageScore}
+            </p>
+            <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+              Avg score
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {agents.map((agent) => {
+        const agentResult = result[agent.key];
+
+        return (
+          <section
+            key={agent.key}
+            className={`rounded-lg border border-white/10 bg-[#171a1f] p-5 ring-1 ${agent.ring}`}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className={`text-lg font-semibold ${agent.accent}`}>
+                  {agent.label}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-300">
+                  {agentResult?.summary || "No summary returned."}
+                </p>
+              </div>
+
+              <div className="rounded-md bg-black/25 px-3 py-2 text-right">
+                <p className="text-xl font-semibold text-white">
+                  {agentResult?.score ?? "-"}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  score
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {(agentResult?.issues.length ?? 0) === 0 && (
+                <p className="rounded-md border border-white/10 bg-black/15 px-3 py-3 text-sm text-zinc-400">
+                  No issues reported.
+                </p>
+              )}
+
+              {agentResult?.issues.map((issue, index) => (
+                <article
+                  key={`${agent.key}-${index}`}
+                  className="rounded-md border border-white/10 bg-black/15 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-sm bg-white/10 px-2 py-1 text-xs font-medium uppercase tracking-[0.12em] text-zinc-300">
+                      {issue.type}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      #{index + 1}
+                    </span>
+                  </div>
+
+                  {issue.text && (
+                    <p className="mt-3 border-l-2 border-amber-300/70 pl-3 text-sm text-zinc-200">
+                      {issue.text}
+                    </p>
+                  )}
+
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">
+                    {issue.issue}
+                  </p>
+
+                  {issue.suggestion && (
+                    <p className="mt-2 text-sm leading-6 text-emerald-200">
+                      {issue.suggestion}
+                    </p>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </>
   );
 }
 

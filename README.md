@@ -77,7 +77,7 @@ npm run dev
 
 Open http://localhost:8000/docs and try `POST /fact-check` with `{"article":"Your draft here."}`. The response includes each claim's verdict, any cited SciFact sentences, and counts by verdict.
 
-If the corpus is missing, `POST /fact-check` returns 503 with setup instructions and grammar and style review remain available. To include fact-checking in `POST /review`, set `REVIEW_INCLUDE_FACT_CHECK=true` and restart. With that flag enabled the server requires a loadable corpus at startup.
+If the corpus is missing, `POST /fact-check` returns 503 with setup instructions and grammar and style review remain available. To include fact-checking in `POST /review`, set `REVIEW_INCLUDE_FACT_CHECK=true` and restart. The Review tab then shows highlighted claims and citations alongside grammar and style. With that flag enabled the server requires a loadable corpus at startup.
 
 ### Using Claude instead of the local model
 

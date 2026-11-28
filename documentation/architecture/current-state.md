@@ -7,7 +7,7 @@ updated: 2026-11-27
 
 # Current state
 
-Snapshot after Phase 1. The frontend offers grammar and style review and a Fact-check tab with highlighted draft sentences and citation details. The API exposes fact-checking through `POST /fact-check` and can include it in `POST /review` when enabled.
+Snapshot after Phase 1. The frontend offers grammar and style review and a Fact-check tab with highlighted draft sentences and citation details. The API exposes fact-checking through `POST /fact-check` and includes it in `POST /review` when enabled. The Review tab displays the returned highlights and citations alongside grammar and style.
 
 ## What it does
 

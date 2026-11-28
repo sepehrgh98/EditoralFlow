@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 const verdicts = {
   supported: { label: "Supported", color: "bg-emerald-400/20 text-emerald-200" },
@@ -55,10 +55,12 @@ export function FactCheckResults({
   article,
   result,
   onEdit,
+  children,
 }: {
   article: string;
   result: FactCheckResult;
   onEdit: () => void;
+  children?: ReactNode;
 }) {
   const [selection, setSelection] = useState<{
     claims: ClaimResult[];
@@ -175,6 +177,7 @@ export function FactCheckResults({
             )}
           </div>
         </section>
+        {children}
       </aside>
     </>
   );

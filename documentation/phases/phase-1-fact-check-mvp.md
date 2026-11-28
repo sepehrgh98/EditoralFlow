@@ -172,6 +172,8 @@ Branch `phase-1`, one pull request into `main`. Follow the implementation workfl
 
 Phase 1 implementation completed on 2026-11-27 on `phase-1`. The frontend and `POST /fact-check` check draft claims against SciFact. The default `POST /review` response continues to contain grammar and style results.
 
+The Review tab also uses the shared highlights and evidence panel when `/review` includes `fact_check_result`.
+
 ### Live verification
 
 The original `make data` run downloaded the corpus, and rerunning it reused the local files. The backend indexed 5,183 abstracts at startup and reported fact-checking ready. One browser submission used five SciFact development claims in a single draft with Ollama `qwen3:8b` for extraction and `qwen3:14b` for verification.

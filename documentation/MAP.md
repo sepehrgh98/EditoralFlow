@@ -17,7 +17,7 @@ Start here. Every documentation file is listed below with what it answers. Files
 | [product/roadmap.md](product/roadmap.md) | What gets built in which phase, and when is a phase done? | agreed |
 | [product/concept-priorities.md](product/concept-priorities.md) | Which AI engineering concepts matter, and where does each appear? | agreed |
 | [architecture/target-architecture.md](architecture/target-architecture.md) | What will the finished system look like, and with which stack? | agreed |
-| [architecture/current-state.md](architecture/current-state.md) | What does the code do right now, file by file? | current |
+| [architecture/current-state.md](architecture/current-state.md) | What does the code do now, including the Review and Fact-check flows? | current |
 | [decisions/](decisions/) | Why was each significant choice made? (ADRs, numbered) | ongoing |
 | [phases/](phases/) | Detailed design and outcome of each phase | ongoing |
 
