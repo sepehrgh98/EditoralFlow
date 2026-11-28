@@ -119,6 +119,16 @@ If your key is already stored in the ignored `backend/.env`, run `uv run --env-f
 
 For a workspace outside the default US region, set `LANGSMITH_ENDPOINT` to the API URL for that region. Use a public SciFact draft, run **Review**, and open **EditoralFlow Review** in the agent's local traces. Grammar, Style and Fact-check appear under that run. In each claim branch, **Search evidence** shows retrieved document IDs and BM25 scores. **Verify claim** shows the verdict and citation IDs. **Generate structured answer** shows the model and elapsed model-call time, including model retries when they occur. To turn tracing off, stop the backend and restart with `LANGSMITH_TRACING=false`. [LangSmith setup](https://docs.langchain.com/langsmith/trace-with-langgraph)
 
+### Inspect full inputs and outputs for a public SciFact claim
+
+From `backend/`, run this with your key already in the ignored `.env`:
+
+```bash
+uv run --env-file .env python -m scripts.trace_scifact 130
+```
+
+Open **Public SciFact claim 130** in the **EditoralFlow → Local → Tracing** view. Use **Input** and **Output** on `extract_claims` to see the public draft and extracted claim. Open **Search evidence** for the ranked abstracts and **Verify claim** for the verdict. Its **Generate structured answer** child shows the exact model prompt and its validated answer. The command accepts a SciFact development claim ID and always uses the local SciFact dataset. Normal API reviews continue to mask raw inputs and outputs.
+
 ### Diagnose a verdict
 
 For a reproducible smoke test, submit this public SciFact development claim (ID 130):

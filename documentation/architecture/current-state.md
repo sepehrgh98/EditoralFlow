@@ -11,6 +11,8 @@ Snapshot after Phase 1.5. The frontend offers one Review workflow for grammar an
 
 With LangSmith tracing enabled in the backend process, the graph run is named `EditoralFlow Review`. The backend masks inputs, outputs and error details and keeps only selected span metadata. Search, verification and structured model calls add child spans under the graph nodes.
 
+The public SciFact trace command in `backend/scripts/trace_scifact.py` runs a dataset claim by ID and records full inputs and outputs for that run.
+
 ## What it does
 
 Paste an article in the frontend; a grammar agent and a style agent review it in parallel and each return a score from 0 to 100, a list of issues and a summary. By default the agents run on a local model through Ollama (free); Claude can be used by setting `LLM_PROVIDER=anthropic`.

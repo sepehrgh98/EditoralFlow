@@ -53,8 +53,14 @@ def build_fact_check_graph(
     # --- one claim: retrieve -> verify ---
     async def retrieve(state: ClaimState) -> ClaimUpdate:
         claim = state["claim"]
-        with trace("Search evidence", run_type="retriever", metadata={"claim_id": claim.id}) as run:
+        with trace(
+            "Search evidence",
+            run_type="retriever",
+            metadata={"claim_id": claim.id},
+            inputs={"query": claim.text, "top_k": top_k},
+        ) as run:
             passages = await retriever.search(claim.text, k=top_k)
+            run.add_outputs({"passages": [passage.model_dump(mode="json") for passage in passages]})
             run.add_metadata(
                 {
                     "retrieved_documents": [
@@ -68,8 +74,13 @@ def build_fact_check_graph(
     async def verify(state: ClaimState) -> ClaimUpdate:
         passages = state["passages"]
         claim = state["claim"]
-        with trace("Verify claim", metadata={"claim_id": claim.id}) as run:
+        with trace(
+            "Verify claim",
+            metadata={"claim_id": claim.id},
+            inputs={"claim": claim.model_dump(mode="json")},
+        ) as run:
             checked = await verifier.verify(claim, passages)
+            run.add_outputs(checked.verdict.model_dump(mode="json"))
             run.add_metadata(
                 {
                     "verdict": checked.verdict.label,

@@ -36,3 +36,5 @@ Commit 2 verification followed claim `c1` through three ranked SciFact results, 
 The [debugging walkthrough](../../README.md#diagnose-a-verdict) uses SciFact development claim 130. For commit 3, a fresh live Ollama run sent a masked trace to the local collector and returned Supported with document `27768226` ranked first. All 165 tests passed with tracing explicitly disabled. The hosted run in `editoralflow-local` confirmed one Review trace with grammar, style, fact-check and nested search, model and verification spans. Claim `c1` ranked document `27768226` first and returned Supported with three citation IDs. All recorded graph inputs and outputs were empty.
 
 The evaluation runner, baseline metrics, labelled articles and CI gate remain in [the Phase 2 roadmap](../product/roadmap.md). Their implementation plan is pending design.
+
+A follow-up added a [public SciFact trace command](../../README.md#inspect-full-inputs-and-outputs-for-a-public-scifact-claim) for inspecting full prompts, retrieved abstracts and structured model answers. It loads a development claim by ID and runs outside the HTTP workflows.
